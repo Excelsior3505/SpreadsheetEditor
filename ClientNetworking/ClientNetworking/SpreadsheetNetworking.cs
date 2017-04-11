@@ -163,17 +163,19 @@ namespace ClientNetworking
 
         /// <summary>
         /// Convert the string to a byte array, append a NewLine, and send over the socket.
+        /// NOTE:  This only appends the first \t char, any other seperators must be added
         /// </summary>
         /// <param name="socket"></param>
         /// <param name="data">string to be sent.</param>
-        public static void Send(Socket socket, String data)
+        /// <param name="formatCode"> integer identifier for packet type</param>
+        public static void Send(Socket socket, String data, int formatCode)
         {
             // Don't send empty strings over the socket
             if (data.Equals("\n") || data.Equals(""))
             {
                 return;
             }
-            byte[] message = Encoding.UTF8.GetBytes(data + "\n");
+            byte[] message = Encoding.UTF8.GetBytes(formatCode.ToString() + "\t" + data + "\n");
 
             socket.BeginSend(message, 0, message.Length, SocketFlags.None, SendCallback, socket);
         }
@@ -225,7 +227,6 @@ namespace ClientNetworking
                 state.DisconnectedProcessor(state);
             }
         }
-
 
 
         /// <summary>
