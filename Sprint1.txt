@@ -1,0 +1,11 @@
+Week 1 Sprint overview
+
+
+TODO:
+
+	1.  NetworkController library in c++ for TCP connections
+	2.  NetworkController libray in c# for TCP connections
+	3.  Setting up connections between client and server using NetworkController libraries
+	4.  Port the Spreadsheet's circular dependency checking and other error checking to c++
+	5.  Test the logic
+	6.  Get a working skeleton connection between a client and server
