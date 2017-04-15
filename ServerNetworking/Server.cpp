@@ -9,6 +9,7 @@
 //#include <boost/shared_ptr.hpp>
 //#include <boost/enable_shared_from_this.hpp>
 #include <boost/asio.hpp>
+#include <thread>
 #include "Server.h"
 #include "SocketState.h"
 
@@ -25,7 +26,9 @@ Server::Server()
   acceptor(io_serv, tcp::enpoint(tcp::v4(), 2112));
 
   //Begin awaiting clients to connect
-  await_client()
+  await_client();
+  
+  nextId = 0;
 }
 
 //Copy constructor
@@ -39,48 +42,82 @@ Server::Server(const Server & other)
 void Server::await_client()
 {
   //Create new socket state to place any new connections
-  SocketState new_client_SS = SocketState::create(acceptor.get_io_service());
+  SocketState new_client_SS(tcp::socket(acceptor.get_io_service()), nextID);
+  nextID++;
 
   //Start asyncronously accepting new clients
   //Bind new_client_handler to be called when new client connects
-  acceptor.async_accept(newClientSS->socket, boost::bind(&Server::new_client_handler, this, new_client_SS, boost::asio::placeholders::error));
+  acceptor.async_accept(new_Client_SS->socket, boost::bind(&Server::new_client_handler, this, new_client_SS, boost::asio::placeholders::error));
 }
 
-void Server::new_client_handler(SocketState new_client, const boost::system::error_code& error)
+void Server::new_client_handler(SocketState new_client_SS, const boost::system::error_code& error)
 {
   //If no error ocurred, add the new client to the list of clients
   if (!error)
     {
       //NEW CLIENT
-      clients.push_back(new_client);
+      new_client_SS.SocketConnected = true;
+      ClientConnection new_cc(new_client_SS);
+      clients.push_back(new_cc);
+      clientID_toDocID.push_back(-1);
     }
 
   //Continue waiting for another client
   await_client();
 }
 
-void Server::send(SocketState receiver, std::string message)
+void Server::send(int clientID, int docID, std::string message)
 {
-  //Asyncronously writes a message to a specified reciever's socket
-  boost::asio::async_write(receiver->socket, boost::asio::buffer(message), boost::bind(&Server::send_handler, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+  //If -1 given, send to all clients
+  if (clientID == -1 && docID == -1)
+    {
+      for (int i = 0; i < clients.size(); i++)
+	{
+	  clients[i].send(message);
+	}
+    }
+  //If -1 is only given for clientID, send to all clients working on specified doc
+  else if (clientID == -1 && docID > -1)
+    {
+      for (int i = 0; i < clients.size(); i++)
+	{
+	  if (clientID_toDocID[i] == docID)
+	    {
+	      clients[i].send(message);
+	    }
+	}
+    }
+  //If a specific client is given and no doc is given, send only to that client
+  else if (clientID > -1 && docID == -1)
+    {
+      clients[clientID].send(message);
+    }
 } 
 
-//Used to handle the send event (doesn't need to do anything but exist apparently?)
-void Server::send_handle(const boost::system::error_code&, std::size_t bytes_transferred)
+//Check the client connections for incoming messages
+void Server::check_for_messages()
 {
+  for (int i = 0; i < clients.size(); i++)
+    {
+      if (!clients[i].incoming_message_queue.empty())
+	{
+	  received_messages.push_back(clients[i].incoming_message_queue.front());
+	  clients[i].incoming_message_queue.pop_front();
+	}
+    }
+
+  processMessages();
+  check_for_messages();
 }
 
-//Asynchronously receive a message 
-void Server::wait_for_message(const boost::system::error_code& error)
+//Process all received messages
+void processMessages()
 {
-  boost::array<char, 1024> message_received;
-  
-  boost::asio::async_read_until(server_socket, boost::asio::buffer(message_received), "\n", boost::bind(&Server::wait_for_message, this, boost::asio::placeholders::error));
+  while (!received_messages.empty())
+    {
+      std::string messageToProcess = received_messaged.front();
+      received_messages.pop_front();
 
-  process_message(message_received);
-}
-
-void process_message (boost::array<char, 1024> message)
-{
-  //TODO: implement method so that the various different messages are handled
+      //TODO: process the various kinds of messages
+    }
 }

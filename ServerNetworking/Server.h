@@ -8,25 +8,29 @@
 
 #include <string>
 #include <boost/asio.hpp>
+#include "ClientConnection.h"
 
 class Server
 {
  public:
   boost::asio::ip::tcp::socket server_socket;
   boost::asio::io::tcp::acceptor acceptor;
-  std::vector<SocketState> clients;
+  std::vector<ClientConnection> clients;
+  std::queue<std::string> received_messages;
+  std::vector<int> clientID_toDocID;
+  int nextID;
 
   Server();
   Server(const Server & other);
 
   void await_client();
-  void send(SocketState receiver, std::string message);
-  void wait_for_message(const boost::system::error_code&);
+  void send(std::string message);
+  void check_for_messages();
+  void processMessages();
  
 
  private:
   void new_client_handler(SocketState new_client, const boost::system::error_code& error);
-  void send_handle(const boost::system::error_code&, std::size_t bytes_transferred);
 };
 
 #endif
