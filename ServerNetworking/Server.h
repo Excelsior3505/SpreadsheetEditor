@@ -7,30 +7,35 @@
 #define SERVER_H
 
 #include <string>
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #include <boost/asio.hpp>
 #include "ClientConnection.h"
+
+typedef boost::shared_ptr<ClientConnection> client_ptr;
 
 class Server
 {
  public:
+  boost::asio::io_service& io_serv;
   boost::asio::ip::tcp::socket server_socket;
-  boost::asio::io::tcp::acceptor acceptor;
-  std::vector<ClientConnection> clients;
+  boost::asio::ip::tcp::acceptor acceptor;
+  std::vector<ClientConnection::cc_ptr> clients;
   std::queue<std::string> received_messages;
   std::vector<int> clientID_toDocID;
   int nextID;
 
-  Server();
-  Server(const Server & other);
+  Server(boost::asio::io_service& io_service_, const boost::asio::ip::tcp::endpoint& endP);
+    //: io_serv(io_service_), acceptor(io_service_, endP), server_socket(io_service_);
 
   void await_client();
-  void send(std::string message);
+  void send(int clientID, int docID, std::string message);
   void check_for_messages();
   void processMessages();
  
 
  private:
-  void new_client_handler(SocketState new_client, const boost::system::error_code& error);
+  void new_client_handler(client_ptr new_cc, const boost::system::error_code& error);
 };
 
 #endif

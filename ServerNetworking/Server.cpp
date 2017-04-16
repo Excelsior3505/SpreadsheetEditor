@@ -6,60 +6,50 @@
 #include <iostream>
 #include <string>
 #include <boost/bind.hpp>
-//#include <boost/shared_ptr.hpp>
-//#include <boost/enable_shared_from_this.hpp>
 #include <boost/asio.hpp>
-#include <thread>
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
 #include "Server.h"
-#include "SocketState.h"
+#include "ClientConnection.h"
 
 using boost::asio::ip::tcp;
 
+typedef boost::shared_ptr<ClientConnection> client_ptr;
 
 //Default constructor for the server
-Server::Server()
+Server::Server(boost::asio::io_service& io_service_, const boost::asio::ip::tcp::endpoint& endP)
+  : io_serv(io_service_), acceptor(io_service_, endP), server_socket(io_service_)
 {
-  //Create io_service
-  boost::asio::io_service io_serv;
-
-  //initialize the object that will listen and accept tcp connections
-  acceptor(io_serv, tcp::enpoint(tcp::v4(), 2112));
-
+  nextID = 0;
+  
   //Begin awaiting clients to connect
   await_client();
-  
-  nextId = 0;
-}
-
-//Copy constructor
-Server::Server(const Server & other)
-{
-  server_socket = other.server_socket;
-  acceptor = other.acceptor;
-  clients = other.clients;
 }
 
 void Server::await_client()
 {
-  //Create new socket state to place any new connections
-  SocketState new_client_SS(tcp::socket(acceptor.get_io_service()), nextID);
+  std::cout << "Awaiting new client" << std::endl;
+
+  //Create new socket to place any new connections
+  ClientConnection::cc_ptr new_cc = ClientConnection::create(io_serv, nextID); 
   nextID++;
 
   //Start asyncronously accepting new clients
   //Bind new_client_handler to be called when new client connects
-  acceptor.async_accept(new_Client_SS->socket, boost::bind(&Server::new_client_handler, this, new_client_SS, boost::asio::placeholders::error));
+  acceptor.async_accept(new_cc->get_socket(), boost::bind(&Server::new_client_handler, this, new_cc, boost::asio::placeholders::error));
 }
 
-void Server::new_client_handler(SocketState new_client_SS, const boost::system::error_code& error)
+void Server::new_client_handler(client_ptr new_cc, const boost::system::error_code& error)
 {
+  std::cout << "New client connected, ID: " << nextID-1 << std::endl;
+
   //If no error ocurred, add the new client to the list of clients
   if (!error)
     {
       //NEW CLIENT
-      new_client_SS.SocketConnected = true;
-      ClientConnection new_cc(new_client_SS);
       clients.push_back(new_cc);
       clientID_toDocID.push_back(-1);
+      new_cc->send("Hello");
     }
 
   //Continue waiting for another client
@@ -73,7 +63,7 @@ void Server::send(int clientID, int docID, std::string message)
     {
       for (int i = 0; i < clients.size(); i++)
 	{
-	  clients[i].send(message);
+	  clients[i]->send(message);
 	}
     }
   //If -1 is only given for clientID, send to all clients working on specified doc
@@ -83,14 +73,14 @@ void Server::send(int clientID, int docID, std::string message)
 	{
 	  if (clientID_toDocID[i] == docID)
 	    {
-	      clients[i].send(message);
+	      clients[i]->send(message);
 	    }
 	}
     }
   //If a specific client is given and no doc is given, send only to that client
   else if (clientID > -1 && docID == -1)
     {
-      clients[clientID].send(message);
+      clients[clientID]->send(message);
     }
 } 
 
@@ -99,10 +89,10 @@ void Server::check_for_messages()
 {
   for (int i = 0; i < clients.size(); i++)
     {
-      if (!clients[i].incoming_message_queue.empty())
+      if (!clients[i]->incoming_message_queue.empty())
 	{
-	  received_messages.push_back(clients[i].incoming_message_queue.front());
-	  clients[i].incoming_message_queue.pop_front();
+	  received_messages.push(clients[i]->incoming_message_queue.front());
+	  clients[i]->incoming_message_queue.pop();
 	}
     }
 
@@ -111,13 +101,14 @@ void Server::check_for_messages()
 }
 
 //Process all received messages
-void processMessages()
+void Server::processMessages()
 {
   while (!received_messages.empty())
     {
-      std::string messageToProcess = received_messaged.front();
-      received_messages.pop_front();
+      std::string messageToProcess = received_messages.front();
+      received_messages.pop();
 
       //TODO: process the various kinds of messages
+      std::cout << messageToProcess << std::endl;
     }
 }
