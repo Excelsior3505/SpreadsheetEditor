@@ -71,9 +71,6 @@ namespace ClientNetworking
         }
 
 
-
-
-
         /// <summary>
         /// Start attempting to connect to the server
         /// </summary>
@@ -81,7 +78,7 @@ namespace ClientNetworking
         /// <returns></returns>
         public static Socket ConnectToServer(string hostName, int port, CallbackFunction connectedCallback)
         {
-
+            
             // Connect to a remote device.
             try
             {
@@ -104,6 +101,7 @@ namespace ClientNetworking
                     // Didn't find any IPV4 addresses
                     if (!foundIPV4)
                     {
+                        Debug.WriteLine("Could not find IP");
                         return null;
                     }
                 }
@@ -113,7 +111,8 @@ namespace ClientNetworking
                     ipAddress = IPAddress.Parse(hostName);
                 }
 
-                // Create a TCP/IP socket.
+
+            // Create a TCP/IP socket.
                 Socket theServer = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 theServer.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
                 SocketState serverState = new SocketState(theServer, -1);
@@ -122,12 +121,14 @@ namespace ClientNetworking
                 serverState.EventProcessor = connectedCallback;
 
                 serverState.socket.BeginConnect(ipAddress, port, ConnectedToServer, serverState);
+                //serverState.socket.Connect(ipAddress, 2112);
                 return theServer;
             }
             catch (Exception e)
             {
                 return null;
             }
+            
         }
 
 
@@ -145,6 +146,7 @@ namespace ClientNetworking
             }
             catch (Exception e)
             {
+                Debug.WriteLine("Failed to end connection");
                 // Connection failed with the server, or server is not running
                 state.SocketConnected = false;
                 return;
@@ -152,7 +154,7 @@ namespace ClientNetworking
             finally
             {
                 // Run the last delegate event, so the application does not just crash when connection failed
-                state.EventProcessor(state);
+                //state.EventProcessor(state);
             }
 
             // Connection successful, begin recieving some data
@@ -201,6 +203,7 @@ namespace ClientNetworking
         public static void ReceiveCallback(IAsyncResult ar)
         {
             SocketState state = (SocketState)ar.AsyncState;
+            Debug.WriteLine("State is now: " + state == null);
             // Try to stop recieving data, if fails call the provided
             // disconnect event delegate
             try
@@ -218,13 +221,14 @@ namespace ClientNetworking
                         state.sb.Append(theMessage);
                     }
                     // This calls the delegate held in the SocketState class
-                    state.EventProcessor(state);
+                    //state.EventProcessor(state);
+                    Debug.WriteLine(state.sb.ToString());
                 }
             }
             catch (Exception)
             {
                 // Don't just break, let the server handle disconnected clients
-                state.DisconnectedProcessor(state);
+                //state.DisconnectedProcessor(state);
             }
         }
 
@@ -239,6 +243,5 @@ namespace ClientNetworking
             Socket socket = (Socket)ar.AsyncState;
             socket.EndSend(ar);
         }
-
     }
 }
