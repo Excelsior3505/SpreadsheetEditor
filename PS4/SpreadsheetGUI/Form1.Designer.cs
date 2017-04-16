@@ -51,6 +51,9 @@
             this.label2 = new System.Windows.Forms.Label();
             this.Coordi_textBox = new System.Windows.Forms.TextBox();
             this.Value_textBox = new System.Windows.Forms.TextBox();
+            this.usernameBox = new System.Windows.Forms.TextBox();
+            this.ipBox = new System.Windows.Forms.TextBox();
+            this.connectButton = new System.Windows.Forms.Button();
             this.menuStrip1.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -244,11 +247,40 @@
             this.Value_textBox.Size = new System.Drawing.Size(57, 20);
             this.Value_textBox.TabIndex = 15;
             // 
+            // usernameBox
+            // 
+            this.usernameBox.Location = new System.Drawing.Point(399, 61);
+            this.usernameBox.Name = "usernameBox";
+            this.usernameBox.Size = new System.Drawing.Size(100, 20);
+            this.usernameBox.TabIndex = 16;
+            this.usernameBox.TextChanged += new System.EventHandler(this.usernameBox_TextChanged);
+            // 
+            // ipBox
+            // 
+            this.ipBox.Location = new System.Drawing.Point(505, 60);
+            this.ipBox.Name = "ipBox";
+            this.ipBox.Size = new System.Drawing.Size(100, 20);
+            this.ipBox.TabIndex = 17;
+            this.ipBox.TextChanged += new System.EventHandler(this.ipBox_TextChanged);
+            // 
+            // connectButton
+            // 
+            this.connectButton.Location = new System.Drawing.Point(611, 60);
+            this.connectButton.Name = "connectButton";
+            this.connectButton.Size = new System.Drawing.Size(75, 23);
+            this.connectButton.TabIndex = 18;
+            this.connectButton.Text = "Connect";
+            this.connectButton.UseVisualStyleBackColor = true;
+            this.connectButton.Click += new System.EventHandler(this.connectButton_Click);
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(784, 561);
+            this.Controls.Add(this.connectButton);
+            this.Controls.Add(this.ipBox);
+            this.Controls.Add(this.usernameBox);
             this.Controls.Add(this.Value_textBox);
             this.Controls.Add(this.Coordi_textBox);
             this.Controls.Add(this.label2);
@@ -295,6 +327,9 @@
         private System.Windows.Forms.ToolStripMenuItem saveAsToolStripMenuItem;
         private System.Windows.Forms.TextBox Coordi_textBox;
         private System.Windows.Forms.TextBox Value_textBox;
+        private System.Windows.Forms.TextBox usernameBox;
+        private System.Windows.Forms.TextBox ipBox;
+        private System.Windows.Forms.Button connectButton;
     }
 }
 

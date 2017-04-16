@@ -10,6 +10,8 @@ using System.Windows.Forms;
 using SS;
 using System.Text.RegularExpressions;
 using SpreadsheetUtilities;
+using ClientNetworking;
+using System.Net.Sockets;
 
 namespace SpreadsheetGUI
 {
@@ -696,5 +698,45 @@ namespace SpreadsheetGUI
         {
             IsPanleFocused = false;
         }
+
+        private void usernameBox_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void ipBox_TextChanged(object sender, EventArgs e)
+        {
+
+        }
+
+        private void connectButton_Click(object sender, EventArgs e)
+        {
+            bool connect = false;
+            if (ipBox.Text.Length < 5)
+            {
+                ipBox.Text = "Invalid IP address";
+                connect = false;
+            }
+            if (usernameBox.Text.Length < 1)
+            {
+                usernameBox.Text = "Username cannot be blank";
+                connect = false;
+            }
+            connect = true;
+            if (connect)
+            {
+                Socket s = SpreadsheetNetworking.ConnectToServer(ipBox.Text, 2112, null);
+                //SpreadsheetNetworking.Send(s, "Hello, world", 1);
+            }
+            //MessageBox.Show(ipBox.Text);
+        }
+
+
+        /*
+         * SPREADSHEET NETWORK EVENTS
+         * 
+         * 
+         * */
+
     }
 }
