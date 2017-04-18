@@ -7,6 +7,7 @@
 #define SERVER_H
 
 #include <string>
+#include <utility>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/asio.hpp>
@@ -21,7 +22,7 @@ class Server
   boost::asio::ip::tcp::socket server_socket;
   boost::asio::ip::tcp::acceptor acceptor;
   std::vector<ClientConnection::cc_ptr> clients;
-  std::queue<std::string> received_messages;
+  std::queue< std::pair< int, std::string> > received_messages;
   std::vector<int> clientID_toDocID;
   int nextID;
 

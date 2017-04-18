@@ -5,6 +5,7 @@
 
 #include <iostream>
 #include <string>
+#include <utility>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
@@ -50,6 +51,7 @@ void Server::new_client_handler(client_ptr new_cc, const boost::system::error_co
       clients.push_back(new_cc);
       clientID_toDocID.push_back(-1);
       new_cc->send("Hello");
+      new_cc->start_waiting_for_message();
     }
 
   //Continue waiting for another client
@@ -91,7 +93,7 @@ void Server::check_for_messages()
     {
       if (!clients[i]->incoming_message_queue.empty())
 	{
-	  received_messages.push(clients[i]->incoming_message_queue.front());
+	  received_messages.push(std::pair<int, std::string>(clients[i]->connectionID, clients[i]->incoming_message_queue.front()));
 	  clients[i]->incoming_message_queue.pop();
 	}
     }
@@ -105,7 +107,8 @@ void Server::processMessages()
 {
   while (!received_messages.empty())
     {
-      std::string messageToProcess = received_messages.front();
+      int clientID = received_messages.front().first;
+      std::string messageToProcess = received_messages.front().second;
       received_messages.pop();
 
       //TODO: process the various kinds of messages

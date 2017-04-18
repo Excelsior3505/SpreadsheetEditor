@@ -1,8 +1,13 @@
 #include <string>
 #include <queue>
+#include <iostream>
+#include <sstream>
+#include <iterator>
 #include <boost/bind.hpp>
 #include <boost/asio.hpp>
 #include "ClientConnection.h"
+
+char message_received[1024];
 
 ClientConnection::ClientConnection(boost::asio::io_service& io_serv, int ID)
   : skt(io_serv)
@@ -17,24 +22,43 @@ ClientConnection::cc_ptr ClientConnection::create(boost::asio::io_service& io_se
 
 void ClientConnection::start_waiting_for_message()
 {
-  boost::array<char, 1024> message_received;
-  boost::asio::async_read(skt, boost::asio::buffer(message_received), boost::bind(&ClientConnection::receive_message_loop, this, boost::asio::placeholders::error));
-  std::string newIncoming(message_received.begin(), message_received.end());
-  incoming_message_queue.push(newIncoming);
+  boost::asio::async_read(skt, boost::asio::buffer(message_received, 1), boost::bind(&ClientConnection::receive_message_loop, shared_from_this(), boost::asio::placeholders::error));
+ 
+  //std::string newIncoming((std::istreambuf_iterator<char>(&message_received)), std::istreambuf_iterator<char>());
+
+  //std::string newIncoming(message_received);
+
+  //std::cout << newIncoming << std::endl;
+  //incoming_message_queue.push(newIncoming);
 }
 
 void ClientConnection::receive_message_loop(const boost::system::error_code& error)
 {
+  std::cout << "Callback" << std::endl;
   if (!error)
     {
-      boost::array<char, 1024> message_received;
-      boost::asio::async_read(skt, boost::asio::buffer(message_received), boost::bind(&ClientConnection::receive_message_loop, this, boost::asio::placeholders::error));
-      std::string newIncoming(message_received.begin(), message_received.end());
+   
+      std::cout << "First Char: " << message_received[0] << std::endl; 
+
+      for (int i = 0; i < 1024; i++)
+	{
+	  std::cout << message_received[i];
+	}
+
+      boost::asio::streambuf message_received;
+      boost::asio::async_read_until(skt, message_received, '\n', boost::bind(&ClientConnection::receive_message_loop, shared_from_this(), boost::asio::placeholders::error));
+      
+      //std::string newIncoming((std::istreambuf_iterator<char>(&message_received)), std::istreambuf_iterator<char>());
+
+      std::string newIncoming(boost::asio::buffers_begin(message_received.data()), boost::asio::buffers_begin(message_received.data())+message_received.size());
+
+
+      std::cout << newIncoming << std::endl;
       incoming_message_queue.push(newIncoming);
     }
   else
     {
-      //Handle error
+      std::cout << "Error" << std::endl;
     }
 }
 
@@ -44,7 +68,7 @@ void ClientConnection::send(const std::string message)
   message_queue.push(message);
   if (!write_in_progress)
     {
-      boost::asio::async_write(skt, boost::asio::buffer(message_queue.front(), message_queue.front().length()), boost::bind(&ClientConnection::handle_send, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+      boost::asio::async_write(skt, boost::asio::buffer(message_queue.front(), message_queue.front().length()), boost::bind(&ClientConnection::handle_send, shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
     }
 }
 
@@ -55,7 +79,7 @@ void ClientConnection::handle_send(const boost::system::error_code & error, std:
       message_queue.pop();
       if (!message_queue.empty())
 	{
-	  boost::asio::async_write(skt, boost::asio::buffer(message_queue.front(), message_queue.front().length()), boost::bind(&ClientConnection::handle_send, this, boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
+	  boost::asio::async_write(skt, boost::asio::buffer(message_queue.front(), message_queue.front().length()), boost::bind(&ClientConnection::handle_send, shared_from_this(), boost::asio::placeholders::error, boost::asio::placeholders::bytes_transferred));
 	}
     }
   else
