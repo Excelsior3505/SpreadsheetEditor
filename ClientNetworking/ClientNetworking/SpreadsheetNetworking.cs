@@ -222,9 +222,6 @@ namespace ClientNetworking
                     }
                     // This calls the delegate held in the SocketState class
                     //state.EventProcessor(state);
-
-
-                    Debug.WriteLine(state.sb.ToString());
                 }
             }
             catch (Exception)

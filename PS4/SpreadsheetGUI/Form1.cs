@@ -12,14 +12,20 @@ using System.Text.RegularExpressions;
 using SpreadsheetUtilities;
 using ClientNetworking;
 using System.Net.Sockets;
+using System.Net;
 
 namespace SpreadsheetGUI
 {
+    // Original code by
     // Sharon Xiao
     // u0943650
 
     // Linxi Li
     // u1016104
+
+
+    /* Repurposed by Charlie Clausen, u0972939
+     * */
     public partial class Form1 : Form
     {
         // Spreadsheet object we are going to use for each cell in the spreadsheet panel
@@ -701,17 +707,17 @@ namespace SpreadsheetGUI
 
         private void usernameBox_TextChanged(object sender, EventArgs e)
         {
-
+            
         }
 
         private void ipBox_TextChanged(object sender, EventArgs e)
         {
-
+            
         }
 
         private void connectButton_Click(object sender, EventArgs e)
         {
-            bool connect = false;
+            bool connect = true;
             if (ipBox.Text.Length < 5)
             {
                 ipBox.Text = "Invalid IP address";
@@ -722,10 +728,58 @@ namespace SpreadsheetGUI
                 usernameBox.Text = "Username cannot be blank";
                 connect = false;
             }
-            connect = true;
             if (connect)
             {
-                Socket s = SpreadsheetNetworking.ConnectToServer(ipBox.Text, 2112, null);
+                Socket s = SpreadsheetNetworking.ConnectToServer("155.98.111.72", 2112, null);
+                Socket s2 = SpreadsheetNetworking.ConnectToServer("155.98.111.72", 2112, null);
+                Socket s3 = SpreadsheetNetworking.ConnectToServer("155.98.111.72", 2112, null);
+                Socket s4 = SpreadsheetNetworking.ConnectToServer("155.98.111.72", 2112, null);
+                /*
+                MessageBox.Show("Socket Connected: " + s.Connected.ToString());
+                MessageBox.Show("Socket 2 Connected: " + s2.Connected.ToString());
+                MessageBox.Show("Socket 3 Connected: " + s3.Connected.ToString());
+                MessageBox.Show("Socket 4 Connected: " + s4.Connected.ToString());*/
+                if (s != null)
+                {
+                    try
+                    {
+                        /*
+                        MessageBox.Show("Socket Connected before send: " + s.Connected.ToString());
+                        MessageBox.Show("Socket 2 Connected before send: " + s2.Connected.ToString());
+                        MessageBox.Show("Socket 3 Connected before send: " + s3.Connected.ToString());
+                        MessageBox.Show("Socket 4 Connected before send: " + s4.Connected.ToString());
+                        byte[] message = Encoding.UTF8.GetBytes(0.ToString() + "\t" + "Hello World!" + "\n");*/
+                        /*foreach (byte b in message)
+                        {
+                            MessageBox.Show(b.ToString());
+                            MessageBox.Show(b.GetType().ToString());
+                        }
+                        MessageBox.Show("Socket Connected: " + s.Connected.ToString());*/
+                        SpreadsheetNetworking.Send(s, "a", 0);
+                        /*
+                        SpreadsheetNetworking.Send(s2, "hello world", 0);
+                        SpreadsheetNetworking.Send(s3, "hello world", 0);
+                        SpreadsheetNetworking.Send(s4, "hello world", 0);*/
+                        //s.BeginSendTo(message, 0, message.Length, SocketFlags.None, ep, SpreadsheetNetworking.SendCallback, s);
+                    }
+                    catch (SocketException a)
+                    {
+                        /*
+                        MessageBox.Show("Socket Connected after send: " + s.Connected.ToString());
+                        MessageBox.Show("Socket Connected after send: " + s.Connected.ToString());
+                        MessageBox.Show("Socket 2 Connected after send: " + s2.Connected.ToString());
+                        MessageBox.Show("Socket 3 Connected after send: " + s3.Connected.ToString());
+                        MessageBox.Show("Socket 4 Connected after send: " + s4.Connected.ToString());
+                        MessageBox.Show(a.Message);
+                        MessageBox.Show(s.SocketType.ToString());*/
+                        MessageBox.Show("You have been disconnected");
+                        //throw a;
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("Socket connection failed");
+                }
                 //SpreadsheetNetworking.Send(s, "Hello, world", 1);
             }
             //MessageBox.Show(ipBox.Text);

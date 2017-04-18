@@ -253,6 +253,7 @@
             this.usernameBox.Name = "usernameBox";
             this.usernameBox.Size = new System.Drawing.Size(100, 20);
             this.usernameBox.TabIndex = 16;
+            this.usernameBox.Text = "Username";
             this.usernameBox.TextChanged += new System.EventHandler(this.usernameBox_TextChanged);
             // 
             // ipBox
@@ -261,6 +262,7 @@
             this.ipBox.Name = "ipBox";
             this.ipBox.Size = new System.Drawing.Size(100, 20);
             this.ipBox.TabIndex = 17;
+            this.ipBox.Text = "IP or Hostname";
             this.ipBox.TextChanged += new System.EventHandler(this.ipBox_TextChanged);
             // 
             // connectButton
