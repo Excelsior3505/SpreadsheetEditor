@@ -10,6 +10,8 @@
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <stdlib.h>
+#include <stdio.h>
 #include "Server.h"
 #include "ClientConnection.h"
 
@@ -47,10 +49,15 @@ void Server::new_client_handler(client_ptr new_cc, const boost::system::error_co
   //If no error ocurred, add the new client to the list of clients
   if (!error)
     {
-      //NEW CLIENT
+      //NEW CLIENT, convert ID to string to send
+      int id = nextID - 1;
+      std::stringstream ss;
+      ss << id;
+      std::string clientID = ss.str();
       clients.push_back(new_cc);
       clientID_toDocID.push_back(-1);
-      new_cc->send("Hello");
+      // Send ID upon connection, wait for username
+      new_cc->send(clientID);
       new_cc->start_waiting_for_message();
     }
 
