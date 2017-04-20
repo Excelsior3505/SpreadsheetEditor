@@ -1,0 +1,2 @@
+run:
+	g++ RunServer.cpp
