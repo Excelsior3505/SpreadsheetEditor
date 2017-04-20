@@ -118,7 +118,6 @@ namespace ClientNetworking
                 serverState.EventProcessor = connectedCallback;
 
                 serverState.socket.BeginConnect(ipAddress, port, ConnectedToServer, serverState);
-                //serverState.socket.Connect(ipAddress, 2112);
                 return theServer;
             }
             catch (Exception e)
@@ -143,7 +142,6 @@ namespace ClientNetworking
             }
             catch (Exception e)
             {
-                Debug.WriteLine("Failed to end connection");
                 // Connection failed with the server, or server is not running
                 state.SocketConnected = false;
                 return;

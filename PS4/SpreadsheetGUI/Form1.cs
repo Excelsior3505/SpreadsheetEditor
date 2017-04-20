@@ -61,6 +61,7 @@ namespace SpreadsheetGUI
         private Socket ClientSocket;
         public int ID;
         public const int DefaultPort = 2112;
+        private bool CurrentlyConnected = false;
 
 
 
@@ -744,12 +745,18 @@ namespace SpreadsheetGUI
             
         }
 
+
         /*
          * Attempts an asyncronous connection attempt using the IP and username given in the 
          * ipBox and userName text boxes
          * */
         private void connectButton_Click(object sender, EventArgs e)
         {
+            // Client already is connected to server, clicking again will open another instance on the server
+            if (CurrentlyConnected)
+            {
+                return;
+            }
             // Simple checks for input, could be improved upon later
             // Could also be a popup
             bool connect = true;
@@ -771,26 +778,14 @@ namespace SpreadsheetGUI
             // Attempt to create a socket with the server
             if (connect)
             {
+                ipBox.Enabled = false;
+                usernameBox.Enabled = false;
                 // Make a socket object to represent the connection, uses the IP passed in and default port
                 ClientSocket = SpreadsheetNetworking.ConnectToServer(ipBox.Text, DefaultPort, Startup);
-                SpreadsheetNetworking.SocketState ClientSocketState = new SpreadsheetNetworking.SocketState(ClientSocket);
-                if (ClientSocket != null && ClientSocket.Connected)
-                {
-                    try
-                    {
-                        SpreadsheetNetworking.Send(ClientSocket, usernameBox.Text, 0);
-                    }
-                    catch (SocketException a)
-                    {
-                        MessageBox.Show("Server has failed to connect, please check ip address and try again");
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("Server has failed to connect, please check ip address and try again");
-                }
             }
         }
+
+
 
         /// <summary>
         /// Startup callback when first connecting to the server
@@ -800,10 +795,13 @@ namespace SpreadsheetGUI
         {
             if (!state.socket.Connected)
             {
+                ipBox.Enabled = true;
+                usernameBox.Enabled = true;
+                CurrentlyConnected = false;
                 MessageBox.Show("Connection with server has failed.  Please check the IP address and try again");
                 return;
             }
-
+            CurrentlyConnected = true;
             // Break up the message ending at the terminator
             string clientID = state.sb.ToString();
             // This needs to be tested, I don't know if the startup ID message will use the terminator
@@ -811,13 +809,27 @@ namespace SpreadsheetGUI
             // Extract the ID
             foreach(string s in wholeMessage)
             {
+                if (s.Length == 0)
+                {
+                    continue;
+                }
                 if (Int32.TryParse(s, out ID))
                 {
                     state.ID = ID;
+                    state.sb.Remove(0, s.Length);
                     break;
                 }
+                // In case no terminator was received
+                if (s[s.Length - 1] != '\n')
+                {
+                    break;
+                }
+                state.sb.Remove(0, s.Length);
             }
 
+            // Set the callback to start looking for messages of any kind
+            state.EventProcessor = ReceiveDataFromServer;
+            MessageBox.Show(state.ID.ToString());
             if (state.ID != -1)
             {
                 try
@@ -831,7 +843,23 @@ namespace SpreadsheetGUI
                     MessageBox.Show(e.Message.ToString());
                     MessageBox.Show("Is the socket connected?  " + state.socket.Connected);
                 }
+                // Starts an asyncronous listen for data coming from the server
+                SpreadsheetNetworking.GetData(state);
             }
+            else
+            {
+                MessageBox.Show("Could not receive ID from server");
+            }
+        }
+
+
+        /// <summary>
+        /// Callback function that will be called whenever data is received from the server
+        /// </summary>
+        /// <param name="state"></param>
+        private void ReceiveDataFromServer(SpreadsheetNetworking.SocketState state)
+        {
+            MessageBox.Show("Receiving data");
         }
     }
 }
