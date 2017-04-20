@@ -50,6 +50,22 @@ namespace SpreadsheetGUI
         private int row;
 
 
+
+
+
+        /*
+         * Network Defaults
+         * 
+         * 
+         * */
+        private Socket ClientSocket;
+        public int ID;
+        public const int DefaultPort = 2112;
+
+
+
+
+
         /// <summary>
         /// Form1 constructor without paramiter
         /// </summary>
@@ -704,19 +720,38 @@ namespace SpreadsheetGUI
         {
             IsPanleFocused = false;
         }
+        /*
+ * SPREADSHEET NETWORK EVENTS
+ * 
+ * 
+ * */
 
+
+
+        /*
+         * This holds the username to be sent to the server
+         * */
         private void usernameBox_TextChanged(object sender, EventArgs e)
         {
             
         }
 
+        /*
+         * This takes the ip address to be connected to
+         * */
         private void ipBox_TextChanged(object sender, EventArgs e)
         {
             
         }
 
+        /*
+         * Attempts an asyncronous connection attempt using the IP and username given in the 
+         * ipBox and userName text boxes
+         * */
         private void connectButton_Click(object sender, EventArgs e)
         {
+            // Simple checks for input, could be improved upon later
+            // Could also be a popup
             bool connect = true;
             if (ipBox.Text.Length < 5)
             {
@@ -728,69 +763,75 @@ namespace SpreadsheetGUI
                 usernameBox.Text = "Username cannot be blank";
                 connect = false;
             }
+            else if (usernameBox.Text.Length >= 25)
+            {
+                usernameBox.Text = "Username too long";
+                connect = false;
+            }
+            // Attempt to create a socket with the server
             if (connect)
             {
-                Socket s = SpreadsheetNetworking.ConnectToServer("155.98.111.72", 2112, null);
-                Socket s2 = SpreadsheetNetworking.ConnectToServer("155.98.111.72", 2112, null);
-                Socket s3 = SpreadsheetNetworking.ConnectToServer("155.98.111.72", 2112, null);
-                Socket s4 = SpreadsheetNetworking.ConnectToServer("155.98.111.72", 2112, null);
-                /*
-                MessageBox.Show("Socket Connected: " + s.Connected.ToString());
-                MessageBox.Show("Socket 2 Connected: " + s2.Connected.ToString());
-                MessageBox.Show("Socket 3 Connected: " + s3.Connected.ToString());
-                MessageBox.Show("Socket 4 Connected: " + s4.Connected.ToString());*/
-                if (s != null)
+                // Make a socket object to represent the connection, uses the IP passed in and default port
+                ClientSocket = SpreadsheetNetworking.ConnectToServer(ipBox.Text, DefaultPort, Startup);
+                SpreadsheetNetworking.SocketState ClientSocketState = new SpreadsheetNetworking.SocketState(ClientSocket);
+                if (ClientSocket != null && ClientSocket.Connected)
                 {
                     try
                     {
-                        /*
-                        MessageBox.Show("Socket Connected before send: " + s.Connected.ToString());
-                        MessageBox.Show("Socket 2 Connected before send: " + s2.Connected.ToString());
-                        MessageBox.Show("Socket 3 Connected before send: " + s3.Connected.ToString());
-                        MessageBox.Show("Socket 4 Connected before send: " + s4.Connected.ToString());
-                        byte[] message = Encoding.UTF8.GetBytes(0.ToString() + "\t" + "Hello World!" + "\n");*/
-                        /*foreach (byte b in message)
-                        {
-                            MessageBox.Show(b.ToString());
-                            MessageBox.Show(b.GetType().ToString());
-                        }
-                        MessageBox.Show("Socket Connected: " + s.Connected.ToString());*/
-                        SpreadsheetNetworking.Send(s, "a", 0);
-                        /*
-                        SpreadsheetNetworking.Send(s2, "hello world", 0);
-                        SpreadsheetNetworking.Send(s3, "hello world", 0);
-                        SpreadsheetNetworking.Send(s4, "hello world", 0);*/
-                        //s.BeginSendTo(message, 0, message.Length, SocketFlags.None, ep, SpreadsheetNetworking.SendCallback, s);
+                        SpreadsheetNetworking.Send(ClientSocket, usernameBox.Text, 0);
                     }
                     catch (SocketException a)
                     {
-                        /*
-                        MessageBox.Show("Socket Connected after send: " + s.Connected.ToString());
-                        MessageBox.Show("Socket Connected after send: " + s.Connected.ToString());
-                        MessageBox.Show("Socket 2 Connected after send: " + s2.Connected.ToString());
-                        MessageBox.Show("Socket 3 Connected after send: " + s3.Connected.ToString());
-                        MessageBox.Show("Socket 4 Connected after send: " + s4.Connected.ToString());
-                        MessageBox.Show(a.Message);
-                        MessageBox.Show(s.SocketType.ToString());*/
-                        MessageBox.Show("You have been disconnected");
-                        //throw a;
+                        MessageBox.Show("Server has failed to connect, please check ip address and try again");
                     }
                 }
                 else
                 {
-                    MessageBox.Show("Socket connection failed");
+                    MessageBox.Show("Server has failed to connect, please check ip address and try again");
                 }
-                //SpreadsheetNetworking.Send(s, "Hello, world", 1);
             }
-            //MessageBox.Show(ipBox.Text);
         }
 
+        /// <summary>
+        /// Startup callback when first connecting to the server
+        /// </summary>
+        /// <param name="state"></param>
+        private void Startup(SpreadsheetNetworking.SocketState state)
+        {
+            if (!state.socket.Connected)
+            {
+                MessageBox.Show("Connection with server has failed.  Please check the IP address and try again");
+                return;
+            }
 
-        /*
-         * SPREADSHEET NETWORK EVENTS
-         * 
-         * 
-         * */
+            // Break up the message ending at the terminator
+            string clientID = state.sb.ToString();
+            // This needs to be tested, I don't know if the startup ID message will use the terminator
+            string[] wholeMessage = Regex.Split(clientID, @"(?<=[\n])");
+            // Extract the ID
+            foreach(string s in wholeMessage)
+            {
+                if (Int32.TryParse(s, out ID))
+                {
+                    state.ID = ID;
+                    break;
+                }
+            }
 
+            if (state.ID != -1)
+            {
+                try
+                {
+                    // Don't know what format code to send, so sending -1
+                    SpreadsheetNetworking.Send(state.socket, usernameBox.Text, -1);
+                }
+                catch(SocketException e)
+                {
+                    MessageBox.Show("There was an error sending to the server");
+                    MessageBox.Show(e.Message.ToString());
+                    MessageBox.Show("Is the socket connected?  " + state.socket.Connected);
+                }
+            }
+        }
     }
 }

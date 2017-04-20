@@ -16,9 +16,6 @@ namespace ClientNetworking
     public class SpreadsheetNetworking
     {
 
-        // Default port as stated by the specs
-        static int DEFAULT_PORT = 2112;
-
         /// <summary>
         /// This class holds all the necessary state to handle a client connection
         /// Note that all of its fields are public because we are using it like a "struct"
@@ -203,7 +200,6 @@ namespace ClientNetworking
         public static void ReceiveCallback(IAsyncResult ar)
         {
             SocketState state = (SocketState)ar.AsyncState;
-            Debug.WriteLine("State is now: " + state == null);
             // Try to stop recieving data, if fails call the provided
             // disconnect event delegate
             try
@@ -221,7 +217,7 @@ namespace ClientNetworking
                         state.sb.Append(theMessage);
                     }
                     // This calls the delegate held in the SocketState class
-                    //state.EventProcessor(state);
+                    state.EventProcessor(state);
                 }
             }
             catch (Exception)
