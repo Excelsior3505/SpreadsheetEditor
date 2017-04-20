@@ -49,10 +49,6 @@ namespace SpreadsheetGUI
         private int col;
         private int row;
 
-
-
-
-
         /*
          * Network Defaults
          * 
@@ -62,6 +58,8 @@ namespace SpreadsheetGUI
         public int ID;
         public const int DefaultPort = 2112;
         private bool CurrentlyConnected = false;
+
+        private List<string> AvailableFiles = new List<string>();
 
 
 
@@ -120,8 +118,26 @@ namespace SpreadsheetGUI
             // if the sheet has not been changed, hide this form and create a new one
             if (!(sheet.Changed))
             {
-                this.Hide();
-                SSContextSingleton.getContext().RunForm(new Form1());
+                //this.Hide();
+                //SSContextSingleton.getContext().RunForm(new Form1());
+                if (CurrentlyConnected)
+                {
+                    try
+                    {
+                        // If no spreadsheet is currently open, request a list of available spreadsheets
+                        SpreadsheetNetworking.Send(ClientSocket, "", 0);
+                    }
+                    catch (Exception)
+                    {
+                        // Send failed, set all networking stuff to null and allow reconnect attempt
+                        MessageBox.Show("You appear to be disconnected from the server");
+                        ipBox.Enabled = true;
+                        usernameBox.Enabled = true;
+                        CurrentlyConnected = false;
+                        ClientSocket = null;
+                        ID = -1;
+                    }
+                }
             }
             else
             {
@@ -753,10 +769,12 @@ namespace SpreadsheetGUI
         private void connectButton_Click(object sender, EventArgs e)
         {
             // Client already is connected to server, clicking again will open another instance on the server
+            /*
             if (CurrentlyConnected)
-            {
+            {               
                 return;
             }
+            */
             // Simple checks for input, could be improved upon later
             // Could also be a popup
             bool connect = true;
@@ -790,6 +808,7 @@ namespace SpreadsheetGUI
                     MessageBox.Show("Failed to connect to server, please check IP and try again");
                     ipBox.Enabled = true;
                     usernameBox.Enabled = true;
+                    CurrentlyConnected = false;
                 }
             }
         }
@@ -869,7 +888,126 @@ namespace SpreadsheetGUI
         /// <param name="state"></param>
         private void ReceiveDataFromServer(SpreadsheetNetworking.SocketState state)
         {
-            MessageBox.Show("Receiving data");
+            string data;
+            lock (state.sb)
+            {
+                data = state.sb.ToString();
+            }
+
+            // Split at tab
+            string[] splitData = Regex.Split(data, @"(?<=[\n])");
+
+            switch(splitData[0])
+            {
+                case "0":
+                    ReceiveFileNames(splitData);
+                    break;
+                case "1":
+                    ReceiveNewID(splitData);
+                    break;
+                case "2":
+                    ReceiveValidOpen(splitData);
+                    break;
+                case "3":
+                    ReceiveCellUpdate(splitData);
+                    break;
+                case "4":
+                    ReceiveUndo(splitData);
+                    break;
+                case "5":
+                    ReceiveRedo(splitData);
+                    break;
+                case "6":
+                    ReceieveRename(splitData);
+                    break;
+                case "7":
+                    ReceiveSave(splitData);
+                    break;
+                case "8":
+                    ReceiveValidRename(splitData);
+                    break;
+                case "9":
+                    ReceiveInvalidRename(splitData);
+                    break;
+                case "A":
+                    ReceiveEditLocation(splitData);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void ReceiveEditLocation(string[] splitData)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ReceiveInvalidRename(string[] splitData)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ReceiveValidRename(string[] splitData)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ReceiveSave(string[] splitData)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ReceieveRename(string[] splitData)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ReceiveRedo(string[] splitData)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ReceiveUndo(string[] splitData)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ReceiveCellUpdate(string[] splitData)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ReceiveValidOpen(string[] splitData)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ReceiveNewID(string[] splitData)
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Takes the split up packet data and save the data to the AvailableFiles list
+        /// </summary>
+        /// <param name="splitData"></param>
+        private void ReceiveFileNames(string[] splitData)
+        {
+            int temp;
+            lock (AvailableFiles)
+            {
+                foreach (string s in splitData)
+                {
+                    if (!Int32.TryParse(s, out temp) && s != "  " && s != "\n")
+                    {
+                        AvailableFiles.Add(s);
+                    }
+                }
+            }
+            if (AvailableFiles.Count > 0)
+            {
+                // Make a tab for available files
+            }
         }
     }
 }
