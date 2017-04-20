@@ -13,6 +13,7 @@
 #include <boost/asio.hpp>
 #include "ClientConnection.h"
 
+class ClientConnection;
 typedef boost::shared_ptr<ClientConnection> client_ptr;
 
 class Server
@@ -21,7 +22,7 @@ class Server
   boost::asio::io_service& io_serv;
   boost::asio::ip::tcp::socket server_socket;
   boost::asio::ip::tcp::acceptor acceptor;
-  std::vector<ClientConnection::cc_ptr> clients;
+  std::vector<client_ptr> clients;
   std::queue< std::pair< int, std::string> > received_messages;
   std::vector<int> clientID_toDocID;
   int nextID;
@@ -31,9 +32,7 @@ class Server
 
   void await_client();
   void send(int clientID, int docID, std::string message);
-  void check_for_messages();
-  void processMessages();
- 
+  void processMessage(int clientID, std::string messageToProcess);
 
  private:
   void new_client_handler(client_ptr new_cc, const boost::system::error_code& error);

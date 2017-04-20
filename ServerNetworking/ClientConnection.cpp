@@ -9,15 +9,16 @@
 
 //char message_received[1024];
 
-ClientConnection::ClientConnection(boost::asio::io_service& io_serv, int ID)
+ClientConnection::ClientConnection(boost::asio::io_service& io_serv, int ID, Server * parent)
   : skt(io_serv)
 {
   connectionID = ID;
+  server = parent;
 }
 
-ClientConnection::cc_ptr ClientConnection::create(boost::asio::io_service& io_serv, int ID)
+ClientConnection::cc_ptr ClientConnection::create(boost::asio::io_service& io_serv, int ID, Server * parent)
 {
-  return cc_ptr(new ClientConnection(io_serv, ID));
+  return cc_ptr(new ClientConnection(io_serv, ID, parent));
 }
 
 void ClientConnection::start_waiting_for_message()
@@ -29,15 +30,22 @@ void ClientConnection::receive_message_loop(const boost::system::error_code& err
 {
   if (!error)
     {
-      std::string newIncoming((std::istreambuf_iterator<char>(&in_stream_buf)), std::istreambuf_iterator<char>());
-      std::cout << newIncoming << std::endl;
+      std::string newIncoming;
+      std::istream is (&in_stream_buf);
+      std::getline(is, newIncoming);
+      
       incoming_message_queue.push(newIncoming);
 
-      boost::asio::async_read_until(skt, in_stream_buf, '\n', boost::bind(&ClientConnection::receive_message_loop, shared_from_this(), boost::asio::placeholders::error));
+      server->processMessage(connectionID, newIncoming);
+
+      //in_stream_buf.consume(in_stream_buf.size()+1);
+      //boost::asio::async_read_until(skt, in_stream_buf, '\n', boost::bind(&ClientConnection::receive_message_loop, shared_from_this(), boost::asio::placeholders::error));
+      start_waiting_for_message();
     }
   else
     {
-      std::cout << "Error: ";
+      //std::cout << "Error: ";
+      incoming_message_queue.push("Error");
     }
 }
 

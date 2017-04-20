@@ -10,6 +10,7 @@
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <thread>
 #include "Server.h"
 #include "ClientConnection.h"
 
@@ -22,8 +23,7 @@ Server::Server(boost::asio::io_service& io_service_, const boost::asio::ip::tcp:
   : io_serv(io_service_), acceptor(io_service_, endP), server_socket(io_service_)
 {
   nextID = 0;
-  
-  //Begin awaiting clients to connect
+
   await_client();
 }
 
@@ -32,7 +32,7 @@ void Server::await_client()
   std::cout << "Awaiting new client" << std::endl;
 
   //Create new socket to place any new connections
-  ClientConnection::cc_ptr new_cc = ClientConnection::create(io_serv, nextID); 
+  ClientConnection::cc_ptr new_cc = ClientConnection::create(io_serv, nextID, this); 
   nextID++;
 
   //Start asyncronously accepting new clients
@@ -89,32 +89,79 @@ void Server::send(int clientID, int docID, std::string message)
     }
 } 
 
-//Check the client connections for incoming messages
-void Server::check_for_messages()
-{
-  for (int i = 0; i < clients.size(); i++)
-    {
-      if (!clients[i]->incoming_message_queue.empty())
-	{
-	  received_messages.push(std::pair<int, std::string>(clients[i]->connectionID, clients[i]->incoming_message_queue.front()));
-	  clients[i]->incoming_message_queue.pop();
-	}
-    }
-
-  processMessages();
-  check_for_messages();
-}
-
 //Process all received messages
-void Server::processMessages()
+void Server::processMessage(int clientID, std::string messageToProcess)
 {
-  while (!received_messages.empty())
-    {
-      int clientID = received_messages.front().first;
-      std::string messageToProcess = received_messages.front().second;
-      received_messages.pop();
+  //TODO: process the various kinds of messages
+  std::cout << "Server received message: " << std::endl;
+  std::cout << messageToProcess << std::endl;
+  std::cout <<"From client: " << clientID << std::endl;
 
-      //TODO: process the various kinds of messages
-      std::cout << messageToProcess << std::endl;
+  received_messages.push(std::pair<int, std::string>(clientID, messageToProcess));
+
+  std::char opCode = messageToProcess.at(0);
+
+  if (messageToProcess == "Error")
+    {
+      clients[clientID] = NULL;
+      return;
+    }
+  
+  switch (opCode)
+    {
+    case '0':    //File List
+      //Send list of filenames
+      break;
+    case '1':    //New
+      //Extract file name from message
+      //Check if name exists
+      //If it does not, send new docID
+      //If it does, send list of filenames
+      break;
+    case '2':    //Open
+      //Extract file name from message
+      //Check if name exists
+      //If it does, send docID
+      //If it does not, send list of filenames
+      break;
+    case '3':    //Edit
+      //Extract docID, cell, and new contents from message
+      //Check for circular dependancy
+      //If no error:
+      //    send valid update message to client
+      //    store previous value of cell in undo list
+      //    update contents of cell
+      //    send update to all clients working on docID
+      //If error:
+      //    send invalid edit message to client
+      break;
+    case '4':    //Undo
+      //Extract docID from message
+      //If there are changes to undo:
+      //    store current value of cell in redo list
+      //    change contents of cell to last contents in undo list
+      //    send update to all clients working on docID
+      break;
+    case '5':    //Redo
+      //Extract docID from message
+      //If there are changes to redo:
+      //    Store current contents of cell in undo list
+      //    Change contents of cell to last contents in redo list
+      //    Send update to all clients working on docID
+      break;
+    case '6':    //Save
+      //Save the current state of the document the client is working on
+      break;
+    case '7':    //Rename
+      //Extract new filename from message
+      //If new filename is already in use on server:
+      //    send packet with opcode 9 to client indicating invalid name
+      //If new filename is valid:
+      //    send packet with opcode 8 to client indicating rename accepted
+      //    send packet with opcode 6 to all clients working on doc with to indicate rename occurred
+      //    change name of document
+      break;
     }
 }
+
+
