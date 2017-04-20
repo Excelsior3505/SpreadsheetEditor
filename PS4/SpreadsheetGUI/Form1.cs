@@ -753,10 +753,10 @@ namespace SpreadsheetGUI
         private void connectButton_Click(object sender, EventArgs e)
         {
             // Client already is connected to server, clicking again will open another instance on the server
-            //if (CurrentlyConnected)
-            //{
-              //  return;
-            //}
+            if (CurrentlyConnected)
+            {
+                return;
+            }
             // Simple checks for input, could be improved upon later
             // Could also be a popup
             bool connect = true;
