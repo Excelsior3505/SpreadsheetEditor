@@ -17,7 +17,7 @@ class ClientConnection
   std::queue<std::string> message_queue;
   std::queue<std::string> incoming_message_queue;
   boost::asio::ip::tcp::socket skt;
-  //boost::asio::streambuf in_stream_buf;
+  boost::asio::streambuf in_stream_buf;
 
   ClientConnection(boost::asio::io_service& io_serv, int ID);
   

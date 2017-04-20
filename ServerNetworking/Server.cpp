@@ -50,7 +50,10 @@ void Server::new_client_handler(client_ptr new_cc, const boost::system::error_co
       //NEW CLIENT
       clients.push_back(new_cc);
       clientID_toDocID.push_back(-1);
-      new_cc->send("Hello");
+      std::stringstream ss;
+      ss << new_cc->connectionID;
+      std::string clientID = ss.str();
+      new_cc->send(clientID);
       new_cc->start_waiting_for_message();
     }
 
