@@ -753,10 +753,10 @@ namespace SpreadsheetGUI
         private void connectButton_Click(object sender, EventArgs e)
         {
             // Client already is connected to server, clicking again will open another instance on the server
-            if (CurrentlyConnected)
-            {
-                return;
-            }
+            //if (CurrentlyConnected)
+            //{
+              //  return;
+            //}
             // Simple checks for input, could be improved upon later
             // Could also be a popup
             bool connect = true;
@@ -778,10 +778,19 @@ namespace SpreadsheetGUI
             // Attempt to create a socket with the server
             if (connect)
             {
-                ipBox.Enabled = false;
-                usernameBox.Enabled = false;
-                // Make a socket object to represent the connection, uses the IP passed in and default port
-                ClientSocket = SpreadsheetNetworking.ConnectToServer(ipBox.Text, DefaultPort, Startup);
+                try
+                {
+                    ipBox.Enabled = false;
+                    usernameBox.Enabled = false;
+                    // Make a socket object to represent the connection, uses the IP passed in and default port
+                    ClientSocket = SpreadsheetNetworking.ConnectToServer(ipBox.Text, DefaultPort, Startup);
+                }
+                catch(Exception)
+                {
+                    MessageBox.Show("Failed to connect to server, please check IP and try again");
+                    ipBox.Enabled = true;
+                    usernameBox.Enabled = true;
+                }
             }
         }
 
@@ -834,8 +843,9 @@ namespace SpreadsheetGUI
             {
                 try
                 {
+                    MessageBox.Show("Sending: " + usernameBox.Text);
                     // Don't know what format code to send, so sending -1
-                    SpreadsheetNetworking.Send(state.socket, usernameBox.Text, -1);
+                    SpreadsheetNetworking.Send(state.socket, usernameBox.Text, 9);
                 }
                 catch(SocketException e)
                 {
