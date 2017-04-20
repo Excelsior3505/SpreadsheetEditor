@@ -14,6 +14,7 @@ class ClientConnection
   typedef boost::shared_ptr<ClientConnection> cc_ptr;
 
   int connectionID;
+  boost::asio::streambuf in_stream_buf;
   std::queue<std::string> message_queue;
   std::queue<std::string> incoming_message_queue;
   boost::asio::ip::tcp::socket skt;
