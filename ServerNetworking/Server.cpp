@@ -99,7 +99,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 
   received_messages.push(std::pair<int, std::string>(clientID, messageToProcess));
 
-  std::char opCode = messageToProcess.at(0);
+  char opCode = messageToProcess.at(0);
 
   if (messageToProcess == "Error")
     {
