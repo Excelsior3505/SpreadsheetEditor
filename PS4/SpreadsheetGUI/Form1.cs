@@ -701,12 +701,30 @@ namespace SpreadsheetGUI
         {
             if (e.KeyChar == (char)Keys.Return)
             {
-                Updatecell();
+                if (userInput.Text != "" && userInput.Text != " " && userInput.Text != "    ")
+                {
+                    if (CurrentlyConnected && ClientSocket.Connected)
+                    {
+                        try
+                        {
+                            // Create the packet of form "3\DocID\tCellName\tnewContents\n
+                            string message = DocID + "\t" + ColRowtoString(col, row) + "\t" + userInput.Text;
+                            SpreadsheetNetworking.Send(ClientSocket, message, 3);
+                        }
+                        catch (Exception)
+                        {
+                            MessageBox.Show("Could not update cell: " + ColRowtoString(col, row));
+                        }
+                    }
+                }
+                //Updatecell();
             }
         }
 
+
+
         /// <summary>
-        /// the funtion that react when the sheet's shelected cell is changed
+        /// the funtion that react when the sheet's selected cell is changed, sends message to server
         /// </summary>
         /// <param name="sender"></param>
         private void spreadsheetPanel1_SelectionChanged(SpreadsheetPanel sender)
@@ -714,10 +732,25 @@ namespace SpreadsheetGUI
             string value;
             // Get the selection's colum and row
             spreadsheetPanel1.GetSelection(out col, out row);
+
             // show the coordination on the coordi textbox
             Coordi_textBox.Text = this.ColRowtoString(col, row);
             // show the contents in the inputbox when selecting one of the changed cell
             userInput.Text = this.PrintableContents(sheet.GetCellContents(Coordi_textBox.Text));
+
+            // Sends a message to let the server know it is editing
+            if (CurrentlyConnected && ClientSocket.Connected)
+            {
+                try
+                {
+                    SpreadsheetNetworking.Send(ClientSocket, DocID + "\t" + Coordi_textBox.Text, 8);
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("Could not send request to the server, please attempt to reconnect");
+                }
+            }
+
 
             //need another version of printable value that does contents.
             spreadsheetPanel1.GetValue(col, row, out value);
