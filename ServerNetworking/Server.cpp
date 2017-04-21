@@ -10,6 +10,7 @@
 #include <boost/asio.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/filesystem.hpp>
 #include <thread>
 #include "Server.h"
 #include "ClientConnection.h"
@@ -100,6 +101,8 @@ void Server::processMessage(int clientID, std::string messageToProcess)
   received_messages.push(std::pair<int, std::string>(clientID, messageToProcess));
 
   std::char opCode = messageToProcess.at(0);
+  std::string fileName = "";
+  int docID = -1;
 
   if (messageToProcess == "Error")
     {
@@ -110,31 +113,82 @@ void Server::processMessage(int clientID, std::string messageToProcess)
   switch (opCode)
     {
     case '0':    //File List
-      //Send list of filenames
+      //Send list of filenames (from ../files/ folder)
       break;
+
     case '1':    //New
       //Extract file name from message
       //Check if name exists
-      //If it does not, send new docID
-      //If it does, send list of filenames
+      if(boost::filesystem::exists("../files/" + fileName))
+	{
+          //If it does, send list of filenames (from ../files/ folder)
+	}
+      else
+	{
+          //If it does not, send new docID
+	  docID = spreadsheets.size();
+	  spreadsheets.push_back(baseSS());
+	}
       break;
+
     case '2':    //Open
       //Extract file name from message
       //Check if name exists
-      //If it does, send docID
-      //If it does not, send list of filenames
+      if(boost::filesystem::exists("../files/" + fileName))
+	{
+	  int loc = 0;
+	  if(spreadsheets.size() > 0)
+	    {
+	      bool found = false;
+	      for(std::vector<base_ss>::iterator it = spreadsheets.begin(); it != spreadsheets.end(); it++)
+		{
+		  if(it->name == fileName)
+		    {
+		      docID = loc;
+		      found = true;
+		      break;
+		    }
+		  loc++;
+		}
+		if(!found)
+		  {
+		    docID = spreadsheets.size();
+		    loadSpreadsheet("../files/" + fileName);
+		  }
+	    }
+	  else
+	    {
+	      docID = 0;
+	      loadSpreadsheet("../files/" + fileName);
+	    }
+          //If it does, send docID
+	}
+      else
+	{
+          //If it does not, send list of filenames (from ../files/ folder)
+	}
       break;
+
     case '3':    //Edit
       //Extract docID, cell, and new contents from message
+      docID = 0; // message docID
+      std::string cell = "A1"; // message cell
+      std::string content = "Hi" // message content
       //Check for circular dependancy
       //If no error:
+      {
       //    send valid update message to client
       //    store previous value of cell in undo list
       //    update contents of cell
+	spreadsheets[docID].set_cell(cell, content);
       //    send update to all clients working on docID
+      }
       //If error:
+      {
       //    send invalid edit message to client
+      }
       break;
+
     case '4':    //Undo
       //Extract docID from message
       //If there are changes to undo:
@@ -142,6 +196,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
       //    change contents of cell to last contents in undo list
       //    send update to all clients working on docID
       break;
+
     case '5':    //Redo
       //Extract docID from message
       //If there are changes to redo:
@@ -149,9 +204,11 @@ void Server::processMessage(int clientID, std::string messageToProcess)
       //    Change contents of cell to last contents in redo list
       //    Send update to all clients working on docID
       break;
+
     case '6':    //Save
       //Save the current state of the document the client is working on
       break;
+
     case '7':    //Rename
       //Extract new filename from message
       //If new filename is already in use on server:
@@ -162,6 +219,11 @@ void Server::processMessage(int clientID, std::string messageToProcess)
       //    change name of document
       break;
     }
+}
+
+void Server::loadSpreadsheet(std::string file_name)
+{
+
 }
 
 

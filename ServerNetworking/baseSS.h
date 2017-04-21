@@ -17,6 +17,7 @@ class base_ss
  int get_size();
  std::string get_contents(std::string key);
  void set_cell(std::string key, std::string content);
+ std::string name;
 };
 
 #endif
