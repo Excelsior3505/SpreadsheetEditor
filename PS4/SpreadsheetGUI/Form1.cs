@@ -419,7 +419,7 @@ namespace SpreadsheetGUI
         /// </summary>
         private void SendCloseToServer()
         {
-            if (ClientSocket.Connected)
+            if (CurrentlyConnected && ClientSocket.Connected)
             {
                 try
                 {
@@ -1072,6 +1072,27 @@ namespace SpreadsheetGUI
             if (AvailableFiles.Count > 0)
             {
                 // Make a tab for available files
+            }
+        }
+
+
+        /// <summary>
+        /// Sends an undo request to the server when clicked
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void undoToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (CurrentlyConnected && ClientSocket.Connected)
+            {
+                try
+                {
+                    SpreadsheetNetworking.Send(ClientSocket, DocID, 4);
+                }
+                catch(Exception)
+                {
+                    MessageBox.Show("Failed to send undo request to server, check connection and try again");
+                }
             }
         }
     }
