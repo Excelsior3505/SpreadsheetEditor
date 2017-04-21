@@ -58,6 +58,7 @@ namespace SpreadsheetGUI
         public int ID;
         public const int DefaultPort = 2112;
         private bool CurrentlyConnected = false;
+        private string DocID = "-1";
 
         private List<string> AvailableFiles = new List<string>();
 
@@ -105,6 +106,7 @@ namespace SpreadsheetGUI
             InitializeComponent();
             this.Text = "SpreadSheet" + "- " + docName;
             Display();
+            AvailableFiles.Add("Testing");
         }
 
 
@@ -124,6 +126,8 @@ namespace SpreadsheetGUI
                 {
                     try
                     {
+                        MessageBox.Show("Sending a 0");
+                        MessageBox.Show("ClientConnected: " + ClientSocket.Connected);
                         // If no spreadsheet is currently open, request a list of available spreadsheets
                         SpreadsheetNetworking.Send(ClientSocket, "", 0);
                     }
@@ -191,11 +195,20 @@ namespace SpreadsheetGUI
             // if the sheet has not been changed, directely open the target sheet
             if (!(sheet.Changed))
             {
+                /*
                 this.Hide();
                 OpenFileDialog OpenFileDialog1 = new OpenFileDialog();
                 OpenFileDialog1.Filter = "Spreadsheet files|*.sprd|All Files|*.*";
                 OpenFileDialog1.Title = "Open Saved Spreadsheet";
                 open(OpenFileDialog1);
+                */
+                if (AvailableFiles.Count > 0)
+                {
+                    foreach (string filename in AvailableFiles)
+                    {
+                        // Add file to dropdown
+                    }
+                }
             }
             
             else
@@ -278,6 +291,9 @@ namespace SpreadsheetGUI
 
             }
         }
+
+
+
         /// <summary>
         /// If click the saveToolStripMenuItem, do the following reaction
         /// </summary>
@@ -302,6 +318,8 @@ namespace SpreadsheetGUI
                 return;
             }
         }
+
+
 
         /// <summary>
         ///  The Save As menu botton to save the sheet to a targeting location with a name.
@@ -354,6 +372,9 @@ namespace SpreadsheetGUI
         // the readonly object that will be used in the save as method
         private readonly object send = new object();
 
+
+
+
         /// <summary>
         /// Excuting closing the program when the close botton is clicked
         /// </summary>
@@ -361,24 +382,29 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void closeToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // if there is no change in the sheet, close the sheet directely
+            // if there is no change in the sheet, close the sheet directely, send server the proper code
             if (!(sheet.Changed))
+            {
+                SendCloseToServer();
                 Close();
+            }
             else
-            {   
+            {
                 // warning the user with message if dont save before closing
                 DialogResult result = MessageBox.Show("There are unsaved changes." +
                     " Save your changes before closing?", "Message",
                     MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
 
-                // if yes, sabe the file
+                // if yes, save the file
                 if (result == DialogResult.Yes)
                 {
                     saveToolStripMenuItem.PerformClick();
+                    SendCloseToServer();
                 }
                 // if no, close the file
                 if (result == DialogResult.No)
                 {
+                    SendCloseToServer();
                     Close();
                 }
                 // if cancle, do nothing
@@ -386,6 +412,26 @@ namespace SpreadsheetGUI
                     return;
             }
         }
+
+
+        /// <summary>
+        /// Used to send the closing message to the server
+        /// </summary>
+        private void SendCloseToServer()
+        {
+            if (ClientSocket.Connected)
+            {
+                try
+                {
+                    SpreadsheetNetworking.Send(ClientSocket, DocID, 9);
+                }
+                catch (Exception e)
+                {
+                    MessageBox.Show("You appear to have lost connection with the server");
+                }
+            }
+        }
+
 
         /// <summary>
         /// set and dispaly the value to the sheet
@@ -435,15 +481,34 @@ namespace SpreadsheetGUI
 
 
         /// <summary>
-        /// press enter to change value
+        /// press enter to send an edit request to the server
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>
         private void EnterBotton_Click(object sender, EventArgs e)
         {
             // calls the Updatecell function
-            Updatecell();
+            //Updatecell();
+            if (userInput.Text != "" || userInput.Text !=" " || userInput.Text != "    ")
+            {
+                if (CurrentlyConnected && ClientSocket.Connected)
+                {
+                    try
+                    {
+                        // Create the packet of form "3\DocID\tCellName\tnewContents\n
+                        string message = DocID + "\t" + ColRowtoString(col, row) + "\t" + userInput.Text;
+                        SpreadsheetNetworking.Send(ClientSocket, message, 3);
+                    }
+                    catch(Exception)
+                    {
+                        MessageBox.Show("Could not update cell: " + ColRowtoString(col, row));
+                    }
+                }
+            }
         }
+
+
+
         /// <summary>
         /// update the cells with thier value
         /// </summary>
@@ -864,7 +929,7 @@ namespace SpreadsheetGUI
                 {
                     MessageBox.Show("Sending: " + usernameBox.Text);
                     // Don't know what format code to send, so sending -1
-                    SpreadsheetNetworking.Send(state.socket, usernameBox.Text, 9);
+                    SpreadsheetNetworking.Send(state.socket, usernameBox.Text, 0);
                 }
                 catch(SocketException e)
                 {

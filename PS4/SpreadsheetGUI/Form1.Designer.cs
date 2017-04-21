@@ -332,6 +332,8 @@
         private System.Windows.Forms.TextBox usernameBox;
         private System.Windows.Forms.TextBox ipBox;
         private System.Windows.Forms.Button connectButton;
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem1;
+        private System.Windows.Forms.ToolStripMenuItem toolStripMenuItem2;
     }
 }
 

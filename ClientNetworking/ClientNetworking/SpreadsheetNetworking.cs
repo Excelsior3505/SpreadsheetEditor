@@ -167,12 +167,15 @@ namespace ClientNetworking
         /// <param name="formatCode"> integer identifier for packet type</param>
         public static void Send(Socket socket, String data, int formatCode)
         {
-            // Don't send empty strings over the socket
-            if (data.Equals("\n") || data.Equals(""))
+            byte[] message;
+            if (formatCode != 0)
             {
-                return;
+                message = Encoding.UTF8.GetBytes(formatCode.ToString() + "\t" + data + "\n");
             }
-            byte[] message = Encoding.UTF8.GetBytes(formatCode.ToString() + "\t" + data + "\n");
+            else
+            {
+                message = Encoding.UTF8.GetBytes(formatCode.ToString() + "\n");
+            }
 
             socket.BeginSend(message, 0, message.Length, SocketFlags.None, SendCallback, socket);
         }
