@@ -39,6 +39,7 @@ class Server
  private:
   void new_client_handler(client_ptr new_cc, const boost::system::error_code& error);
   void loadSpreadsheet(std::string file_name);
+  std::vector<std::string> split_message(std::string message);
 };
 
 #endif

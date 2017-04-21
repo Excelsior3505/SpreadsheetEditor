@@ -101,14 +101,15 @@ void Server::processMessage(int clientID, std::string messageToProcess)
   received_messages.push(std::pair<int, std::string>(clientID, messageToProcess));
 
   std::char opCode = messageToProcess.at(0);
-  std::string fileName = "";
-  int docID = -1;
 
   if (messageToProcess == "Error")
     {
       clients[clientID] = NULL;
+      clientID_toDocID[clientID] = NULL;
       return;
     }
+
+  std::vector<std::string> data = split_message(messageToProcess);
   
   switch (opCode)
     {
@@ -118,6 +119,8 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 
     case '1':    //New
       //Extract file name from message
+      std::string fileName = data[1];
+
       //Check if name exists
       if(boost::filesystem::exists("../files/" + fileName))
 	{
@@ -128,11 +131,14 @@ void Server::processMessage(int clientID, std::string messageToProcess)
           //If it does not, send new docID
 	  docID = spreadsheets.size();
 	  spreadsheets.push_back(baseSS());
+	  //TODO: 
 	}
       break;
 
     case '2':    //Open
       //Extract file name from message
+      std::string fileName = data[1];
+      
       //Check if name exists
       if(boost::filesystem::exists("../files/" + fileName))
 	{
@@ -171,26 +177,33 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 
     case '3':    //Edit
       //Extract docID, cell, and new contents from message
-      docID = 0; // message docID
-      std::string cell = "A1"; // message cell
-      std::string content = "Hi" // message content
+      std::istringstream iss(data[1]);
+      int docID;
+      data[1] >> docID;
+      std::string cell = data[2];
+      std::string content = data[3];
+
       //Check for circular dependancy
       //If no error:
-      {
+      //{
       //    send valid update message to client
       //    store previous value of cell in undo list
       //    update contents of cell
-	spreadsheets[docID].set_cell(cell, content);
+      //    spreadsheets[docID].set_cell(cell, content);
       //    send update to all clients working on docID
-      }
+      //}
       //If error:
-      {
+      //{
       //    send invalid edit message to client
-      }
+      //}
       break;
 
     case '4':    //Undo
       //Extract docID from message
+      std::istringstream iss(data[1]);
+      int docID;
+      data[1] >> docID;
+
       //If there are changes to undo:
       //    store current value of cell in redo list
       //    change contents of cell to last contents in undo list
@@ -199,6 +212,10 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 
     case '5':    //Redo
       //Extract docID from message
+      std::istringstream iss(data[1]);
+      int docID;
+      data[1] >> docID;
+
       //If there are changes to redo:
       //    Store current contents of cell in undo list
       //    Change contents of cell to last contents in redo list
@@ -206,11 +223,16 @@ void Server::processMessage(int clientID, std::string messageToProcess)
       break;
 
     case '6':    //Save
+      int docID = clientID_toDocID[clientID];
+
       //Save the current state of the document the client is working on
       break;
 
     case '7':    //Rename
       //Extract new filename from message
+      std::string filename = data[1];
+      int docID = clientID_toDocID[clientID];
+
       //If new filename is already in use on server:
       //    send packet with opcode 9 to client indicating invalid name
       //If new filename is valid:
@@ -224,6 +246,31 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 void Server::loadSpreadsheet(std::string file_name)
 {
 
+}
+
+
+//Extracts data from message string sent from client
+std::vector<std::string> Server::split_message(std::string message)
+{
+  std::stringstream msg(message);
+  std::string data;
+  std::vector<std::string> dataList;
+
+  while (std::getline(msg, data, '\t'))
+    {
+      dataList.push_back(data);
+    } 
+
+  std::string lastString = dataList.back();
+  dataList.pop_back();
+  
+  if (lastString.back() == '\n')
+    {
+      lastString.pop_back();
+    }
+
+  dataList.push_back(lastString);
+  return dataList;
 }
 
 
