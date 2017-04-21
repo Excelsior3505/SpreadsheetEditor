@@ -1095,5 +1095,26 @@ namespace SpreadsheetGUI
                 }
             }
         }
+
+
+        /// <summary>
+        /// Sends a Redo request to the server
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void redoToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (CurrentlyConnected && ClientSocket.Connected)
+            {
+                try
+                {
+                    SpreadsheetNetworking.Send(ClientSocket, DocID, 5);
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("Failed to send undo request to server, check connection and try again");
+                }
+            }
+        }
     }
 }
