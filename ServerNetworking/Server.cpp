@@ -115,6 +115,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
     {
     case '0':    //File List
       //Send list of filenames (from ../files/ folder)
+      send(clientID, -1, get_all_filenames());
       break;
 
     case '1':    //New
@@ -125,6 +126,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
       if(boost::filesystem::exists("../files/" + fileName))
 	{
           //If it does, send list of filenames (from ../files/ folder)
+	  send(clientID, -1, get_all_filenames());
 	}
       else
 	{
@@ -172,6 +174,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
       else
 	{
           //If it does not, send list of filenames (from ../files/ folder)
+	  send(clientID, -1, get_all_filenames());
 	}
       break;
 
@@ -271,6 +274,25 @@ std::vector<std::string> Server::split_message(std::string message)
 
   dataList.push_back(lastString);
   return dataList;
+}
+
+//returns all the filenames from the files directory
+std::string Server::get_all_filenames()
+{
+  std::string allFileNames = "0\t";
+
+  boost::filesystem::path p("../files/");
+
+  boost::filesystem::directory_iterator end_it;
+
+  for(boost::filesystem::directory_iterator it(p); it != end_it; !!it)
+    {
+      if (boost::filesystem::is_regular_file(it->path()))
+	{
+	  allfileNames = allFileNames + it->path().string();
+	}
+    }
+  return allFileNames;
 }
 
 
