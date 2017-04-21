@@ -14,6 +14,16 @@ using ClientNetworking;
 using System.Net.Sockets;
 using System.Net;
 
+
+/* TODO:
+ *      - Save sending and receiving
+ *      - Open/New Receiving functionality
+ *      - Rename Sending/Receiving
+ *      - Pretty much all the Receiving functionality
+ *  
+ * */
+
+
 namespace SpreadsheetGUI
 {
     // Original code by
@@ -1040,21 +1050,46 @@ namespace SpreadsheetGUI
             throw new NotImplementedException();
         }
 
+
+        /// <summary>
+        /// Received a packet that the rename attempt was unsuccessful
+        /// </summary>
+        /// <param name="splitData"></param>
         private void ReceiveInvalidRename(string[] splitData)
         {
-            throw new NotImplementedException();
+            DocID = GetDocID(splitData);
+            MessageBox.Show("The spreadsheet rename attempt was unsuccessful");
         }
 
+
+        /// <summary>
+        /// Received a packet that the rename attempt was successful
+        /// </summary>
+        /// <param name="splitData"></param>
         private void ReceiveValidRename(string[] splitData)
         {
-            throw new NotImplementedException();
+            DocID = GetDocID(splitData);
+            if (DocID != "-1")
+            {
+                MessageBox.Show("Spreadsheet successfully renamed");
+            }
         }
 
+
+        /// <summary>
+        /// Confirmation that the spreadsheet was saved
+        /// </summary>
+        /// <param name="splitData"></param>
         private void ReceiveSave(string[] splitData)
         {
-            throw new NotImplementedException();
+            DocID = GetDocID(splitData);
         }
 
+
+        /// <summary>
+        /// When a rename is valid, rename the file
+        /// </summary>
+        /// <param name="splitData"></param>
         private void ReceieveRename(string[] splitData)
         {
             throw new NotImplementedException();
@@ -1075,14 +1110,53 @@ namespace SpreadsheetGUI
             throw new NotImplementedException();
         }
 
+
+        /// <summary>
+        /// Receive the DocID from the server when opening an existing spreadsheet
+        /// </summary>
+        /// <param name="splitData"></param>
         private void ReceiveValidOpen(string[] splitData)
         {
-            throw new NotImplementedException();
+            DocID = GetDocID(splitData);
         }
 
+
+        /// <summary>
+        /// Receive the DocID from the server when opening up a new spreadsheet
+        /// </summary>
+        /// <param name="splitData"></param>
         private void ReceiveNewID(string[] splitData)
         {
-            throw new NotImplementedException();
+            DocID = GetDocID(splitData);
+        }
+
+
+        /// <summary>
+        /// Helper function to extract DocID from a packet
+        /// </summary>
+        /// <param name="splitData"></param>
+        /// <returns></returns>
+        private string GetDocID(string[] splitData)
+        {
+            string id = "-1";
+            if (splitData.Length < 2)
+            {
+                MessageBox.Show("Invalid number of inputs when receiving the DocID");
+            }
+            else
+            {
+                // Should be the second parameter
+                int temp;
+                for (int i = 1; i < splitData.Length; i++)
+                {
+                    if (Int32.TryParse(splitData[i], out temp))
+                    {
+                        id = splitData[i];
+                        break;
+                    }
+                }
+            }
+            return id;
         }
 
         /// <summary>
