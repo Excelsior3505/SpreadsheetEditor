@@ -127,6 +127,23 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (CurrentlyConnected && ClientSocket.Connected)
+            {
+                try
+                {
+                    SpreadsheetNetworking.Send(ClientSocket, "", 0);
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("You do not appear to be connected to the server");
+                    AllowReconnect();
+                }
+            }
+            else
+            {
+                MessageBox.Show("You do not appear to be connected to the server");
+                AllowReconnect();
+            }
             OpenForm form = new OpenForm(AvailableFiles, ClientSocket);
             form.Show();
 
@@ -139,6 +156,23 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (CurrentlyConnected && ClientSocket.Connected)
+            {
+                try
+                {
+                    SpreadsheetNetworking.Send(ClientSocket, "", 0);
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("You do not appear to be connected to the server");
+                    AllowReconnect();
+                }
+            }
+            else
+            {
+                MessageBox.Show("You do not appear to be connected to the server");
+                AllowReconnect();
+            }
             if (AvailableFiles.Count > 0)
             {
                 OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket);
@@ -1043,11 +1077,6 @@ namespace SpreadsheetGUI
                         AvailableFiles.Add(s);
                     }
                 }
-            }
-            if (AvailableFiles.Count > 0)
-            {
-                // Add to some kind of menu
-                
             }
         }
 
