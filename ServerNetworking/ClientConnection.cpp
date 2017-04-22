@@ -23,7 +23,36 @@ ClientConnection::cc_ptr ClientConnection::create(boost::asio::io_service& io_se
 
 void ClientConnection::start_waiting_for_message()
 {
-  boost::asio::async_read_until(skt, in_stream_buf, '\n', boost::bind(&ClientConnection::receive_message_loop, shared_from_this(), boost::asio::placeholders::error));
+  boost::asio::async_read_until(skt, in_stream_buf, '\n', boost::bind(&ClientConnection::receive_username, shared_from_this(), boost::asio::placeholders::error));
+}
+
+void ClientConnection::receive_username(const boost::system::error_code& error)
+{
+  if (!error)
+    {
+      std::string newIncoming;
+      std::istream is (&in_stream_buf);
+      std::getline(is, newIncoming);
+
+      newIncoming = "10\t" + newIncoming;
+      
+      incoming_message_queue.push(newIncoming);
+
+      server->processMessage(connectionID, newIncoming);
+
+      //in_stream_buf.consume(in_stream_buf.size()+1);
+      wait_for_message();
+    }
+  else
+    {
+      //std::cout << "Error: ";
+      incoming_message_queue.push("Error");
+    }
+}
+
+void ClientConnection::wait_for_message()
+{
+   boost::asio::async_read_until(skt, in_stream_buf, '\n', boost::bind(&ClientConnection::receive_message_loop, shared_from_this(), boost::asio::placeholders::error));
 }
 
 void ClientConnection::receive_message_loop(const boost::system::error_code& error)
@@ -37,10 +66,8 @@ void ClientConnection::receive_message_loop(const boost::system::error_code& err
       incoming_message_queue.push(newIncoming);
 
       server->processMessage(connectionID, newIncoming);
-
-      //in_stream_buf.consume(in_stream_buf.size()+1);
-      //boost::asio::async_read_until(skt, in_stream_buf, '\n', boost::bind(&ClientConnection::receive_message_loop, shared_from_this(), boost::asio::placeholders::error));
-      start_waiting_for_message();
+     
+      wait_for_message();
     }
   else
     {

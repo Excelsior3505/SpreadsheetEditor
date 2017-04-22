@@ -21,12 +21,15 @@ class ClientConnection
   std::queue<std::string> incoming_message_queue;
   boost::asio::ip::tcp::socket skt;
   boost::asio::streambuf in_stream_buf;
+  std::string username;
   Server * server;
 
   ClientConnection(boost::asio::io_service& io_serv, int ID, Server * parent);
   
   static cc_ptr create(boost::asio::io_service& io_serv, int ID, Server * parent);
   void start_waiting_for_message();
+  void receive_username(const boost::system::error_code& error);
+  void wait_for_message();
   void receive_message_loop(const boost::system::error_code& error);
   void send(const std::string message);
   void handle_send(const boost::system::error_code & error, std::size_t size);

@@ -12,6 +12,7 @@
 #include <boost/enable_shared_from_this.hpp>
 #include <boost/asio.hpp>
 #include "ClientConnection.h"
+#include "baseSS.h"
 
 class ClientConnection;
 typedef boost::shared_ptr<ClientConnection> client_ptr;
@@ -25,6 +26,7 @@ class Server
   std::vector<client_ptr> clients;
   std::queue< std::pair< int, std::string> > received_messages;
   std::vector<int> clientID_toDocID;
+  std::vector<base_ss*> spreadsheets;
   int nextID;
 
   Server(boost::asio::io_service& io_service_, const boost::asio::ip::tcp::endpoint& endP);
@@ -36,6 +38,9 @@ class Server
 
  private:
   void new_client_handler(client_ptr new_cc, const boost::system::error_code& error);
+  void loadSpreadsheet(std::string file_name);
+  std::vector<std::string> split_message(std::string message);
+  std::string get_all_filenames();
 };
 
 #endif
