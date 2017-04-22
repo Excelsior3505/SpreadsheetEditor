@@ -1,12 +1,17 @@
 #include "dpgraph.h"
+namespace cs3505
+{
 dpgraph::dpgraph()
 {
 
- 
+
 }
 
 
-
+//dpgraph::~dpgraph()
+//{
+ //   delete &keys;
+//}
 int dpgraph::get_size()
 {
     int size=0;
@@ -147,4 +152,5 @@ void dpgraph::replace_dependees(std::string s, std::set <std::string> newdepende
          }
      }
 
+}
 }
