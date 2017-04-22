@@ -70,6 +70,7 @@ namespace SpreadsheetGUI
             }
             else
             {
+                
                 SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, 1);
                 Close();
             }

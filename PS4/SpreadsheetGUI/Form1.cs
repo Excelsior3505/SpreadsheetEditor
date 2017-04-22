@@ -76,9 +76,6 @@ namespace SpreadsheetGUI
         //Timer timer = new Timer()
 
 
-
-
-
         /// <summary>
         /// Form1 constructor without paramiter
         /// </summary>
@@ -163,21 +160,18 @@ namespace SpreadsheetGUI
         private void saveToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // filePath is null, excute saveAsToolStripMenuItem_Click function
-            if (filePath == null)
+            if (CurrentlyConnected && ClientSocket.Connected)
             {
-                saveAsToolStripMenuItem_Click(sender, e);
+                try
+                {
+                    SpreadsheetNetworking.Send(ClientSocket, DocID, 6);
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("You appear to have lost connection with the server");
+                }
             }
-            // the sheet has been changed, save the sheet directly
-            if (sheet.Changed)
-            {
-                sheet.Save(docName);
-                MessageBox.Show("Successfully saved.", "Message");
-            }
-            // if the sheet hasn't been changed. do nothing
-            if (!sheet.Changed)
-            {
-                return;
-            }
+
         }
 
 
@@ -189,30 +183,18 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // if the user hit ok
-            if (saveFileDialog1.ShowDialog() == DialogResult.OK)
+            if (CurrentlyConnected && ClientSocket.Connected)
             {
                 try
                 {
-                    // set the file path to saveFileDialog1.FileName
-                    filePath = saveFileDialog1.FileName;
-
-                    // save file by using the backgroundWorker1
-                    backgroundWorker1.RunWorkerAsync();
-
-                    // show message after saveing
-                    MessageBox.Show("Successfully saved.", "Message");
-
-                    // display the new name
-                    getFileName();
-                    this.Text = docName;
+                    SpreadsheetNetworking.Send(ClientSocket, DocID, 6);
                 }
-                // return message shows Unable to save if SpreadsheetReadWriteException catched
-                catch (SpreadsheetReadWriteException)
+                catch (Exception)
                 {
-                    MessageBox.Show("Unable to save.", "Message");
+                    MessageBox.Show("You appear to have lost connection with the server");
                 }
             }
+
         }
         /// <summary>
         /// backgroundWorker1_DoWork helper to save the file.
@@ -1001,7 +983,8 @@ namespace SpreadsheetGUI
         /// <param name="splitData"></param>
         private void ReceiveValidOpen(string[] splitData)
         {
-            DocID = GetDocID(splitData);
+            DocID = splitData[1];
+            DocID = DocID.Substring(0, DocID.Length - 1);
         }
 
 
@@ -1011,8 +994,8 @@ namespace SpreadsheetGUI
         /// <param name="splitData"></param>
         private void ReceiveNewID(string[] splitData)
         {
-            DocID = GetDocID(splitData);
-            Debug.WriteLine(DocID);
+            DocID = splitData[1];
+            DocID = DocID.Substring(0, DocID.Length - 1);
         }
 
 
