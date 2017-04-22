@@ -168,13 +168,20 @@ namespace ClientNetworking
         public static void Send(Socket socket, String data, int formatCode)
         {
             byte[] message;
-            if (formatCode != 0)
+            if (formatCode == -1)
             {
+                // Sending the name
+                message = Encoding.UTF8.GetBytes(data + "\n");
+            }
+            else if (formatCode != 0)
+            {
+                // Most message formats
                 message = Encoding.UTF8.GetBytes(formatCode.ToString() + "\t" + data + "\n");
             }
             else
             {
-                message = Encoding.UTF8.GetBytes(formatCode.ToString() + "\n");
+                // requesting a new document
+                message = Encoding.UTF8.GetBytes(formatCode + data + "\n");
             }
 
             socket.BeginSend(message, 0, message.Length, SocketFlags.None, SendCallback, socket);

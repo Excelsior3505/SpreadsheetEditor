@@ -13,6 +13,7 @@ using SpreadsheetUtilities;
 using ClientNetworking;
 using System.Net.Sockets;
 using System.Net;
+using System.Diagnostics;
 
 
 /* TODO:
@@ -69,7 +70,8 @@ namespace SpreadsheetGUI
         public const int DefaultPort = 2112;
         private bool CurrentlyConnected = false;
         private string DocID = "-1";
-
+        string FileName = "";
+        string UserName = "";
         private List<string> AvailableFiles = new List<string>();
 
 
@@ -145,11 +147,7 @@ namespace SpreadsheetGUI
                     {
                         // Send failed, set all networking stuff to null and allow reconnect attempt
                         MessageBox.Show("You appear to be disconnected from the server");
-                        ipBox.Enabled = true;
-                        usernameBox.Enabled = true;
-                        CurrentlyConnected = false;
-                        ClientSocket = null;
-                        ID = -1;
+                        AllowReconnect();
                     }
                 }
             }
@@ -512,7 +510,14 @@ namespace SpreadsheetGUI
                     catch(Exception)
                     {
                         MessageBox.Show("Could not update cell: " + ColRowtoString(col, row));
+                        AllowReconnect();
                     }
+                }
+                else
+                {
+                    ipBox.Enabled = true;
+                    usernameBox.Enabled = true;
+                    CurrentlyConnected = false;
                 }
             }
         }
@@ -724,7 +729,14 @@ namespace SpreadsheetGUI
                         catch (Exception)
                         {
                             MessageBox.Show("Could not update cell: " + ColRowtoString(col, row));
+                            AllowReconnect();
                         }
+                    }
+                    else
+                    {
+                        ipBox.Enabled = true;
+                        usernameBox.Enabled = true;
+                        CurrentlyConnected = false;
                     }
                 }
                 //Updatecell();
@@ -749,17 +761,7 @@ namespace SpreadsheetGUI
             userInput.Text = this.PrintableContents(sheet.GetCellContents(Coordi_textBox.Text));
 
             // Sends a message to let the server know it is editing
-            if (CurrentlyConnected && ClientSocket.Connected)
-            {
-                try
-                {
-                    SpreadsheetNetworking.Send(ClientSocket, DocID + "\t" + Coordi_textBox.Text, 8);
-                }
-                catch (Exception)
-                {
-                    MessageBox.Show("Could not send request to the server, please attempt to reconnect");
-                }
-            }
+            SendCellNameToServer();
 
 
             //need another version of printable value that does contents.
@@ -768,6 +770,27 @@ namespace SpreadsheetGUI
             IsPanleFocused = true;
         }
 
+        private void SendCellNameToServer()
+        {
+            if (CurrentlyConnected && ClientSocket.Connected)
+            {
+                try
+                {
+                    SpreadsheetNetworking.Send(ClientSocket, DocID + "\t" + ColRowtoString(col, row), 8);
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("Could not send request to the server, please attempt to reconnect");
+                    AllowReconnect();
+                }
+            }
+            else
+            {
+                ipBox.Enabled = true;
+                usernameBox.Enabled = true;
+                CurrentlyConnected = false;
+            }
+        }
 
         private void progressBar1_Click(object sender, EventArgs e)
         {
@@ -914,11 +937,20 @@ namespace SpreadsheetGUI
                 catch(Exception)
                 {
                     MessageBox.Show("Failed to connect to server, please check IP and try again");
-                    ipBox.Enabled = true;
-                    usernameBox.Enabled = true;
-                    CurrentlyConnected = false;
+                    AllowReconnect();
                 }
             }
+        }
+
+
+        /// <summary>
+        /// Re-enables all functionality in case of network drop
+        /// </summary>
+        private void AllowReconnect()
+        {
+            ipBox.Enabled = true;
+            usernameBox.Enabled = true;
+            CurrentlyConnected = false;
         }
 
 
@@ -965,14 +997,13 @@ namespace SpreadsheetGUI
 
             // Set the callback to start looking for messages of any kind
             state.EventProcessor = ReceiveDataFromServer;
-            MessageBox.Show(state.ID.ToString());
             if (state.ID != -1)
             {
                 try
                 {
-                    MessageBox.Show("Sending: " + usernameBox.Text);
+                    MessageBox.Show("Successfully connected, your ID is: " + state.ID);
                     // Don't know what format code to send, so sending -1
-                    SpreadsheetNetworking.Send(state.socket, usernameBox.Text, 0);
+                    SpreadsheetNetworking.Send(state.socket, usernameBox.Text, -1);
                 }
                 catch(SocketException e)
                 {
@@ -996,16 +1027,25 @@ namespace SpreadsheetGUI
         /// <param name="state"></param>
         private void ReceiveDataFromServer(SpreadsheetNetworking.SocketState state)
         {
+            // Get the data
             string data;
             lock (state.sb)
             {
                 data = state.sb.ToString();
+                MessageBox.Show("Received Message: " + data);
+                // Split at newline
+            }
+            // Split messages at the newline and then break that up by tabs
+            string[] splitOne = Regex.Split(data, @"(?<=[\n])");
+            string[] splitData = splitOne[0].Split('\t');
+            lock (state.sb)
+            {
+                // Prevent buffer overflow
+                state.sb.Remove(0, splitOne[0].Length);
             }
 
-            // Split at tab
-            string[] splitData = Regex.Split(data, @"(?<=[\n])");
-
-            switch(splitData[0])
+            // Check the op-codes
+            switch (splitData[0])
             {
                 case "0":
                     ReceiveFileNames(splitData);
@@ -1020,10 +1060,10 @@ namespace SpreadsheetGUI
                     ReceiveCellUpdate(splitData);
                     break;
                 case "4":
-                    ReceiveUndo(splitData);
+                    ReceiveValidEdit(splitData);
                     break;
                 case "5":
-                    ReceiveRedo(splitData);
+                    ReceiveInvalidEdit(splitData);
                     break;
                 case "6":
                     ReceieveRename(splitData);
@@ -1043,11 +1083,15 @@ namespace SpreadsheetGUI
                 default:
                     break;
             }
+            SpreadsheetNetworking.GetData(state);
         }
 
         private void ReceiveEditLocation(string[] splitData)
         {
-            throw new NotImplementedException();
+            foreach (string s in splitData)
+            {
+                MessageBox.Show(s);
+            }
         }
 
 
@@ -1083,6 +1127,7 @@ namespace SpreadsheetGUI
         private void ReceiveSave(string[] splitData)
         {
             DocID = GetDocID(splitData);
+            MessageBox.Show("Saved!");
         }
 
 
@@ -1095,19 +1140,65 @@ namespace SpreadsheetGUI
             throw new NotImplementedException();
         }
 
-        private void ReceiveRedo(string[] splitData)
+
+        /// <summary>
+        /// Edit caused an error (circular dependency)
+        /// </summary>
+        /// <param name="splitData"></param>
+        private void ReceiveInvalidEdit(string[] splitData)
         {
-            throw new NotImplementedException();
+            DocID = GetDocID(splitData);
+            MessageBox.Show("This caused an error on the server, please change the value");
         }
 
-        private void ReceiveUndo(string[] splitData)
+
+        /// <summary>
+        /// Valid edit
+        /// </summary>
+        /// <param name="splitData"></param>
+        private void ReceiveValidEdit(string[] splitData)
         {
-            throw new NotImplementedException();
+            DocID = GetDocID(splitData);
         }
 
+
+        /// <summary>
+        /// Updates the actual value of the cell
+        /// </summary>
+        /// <param name="splitData"></param>
         private void ReceiveCellUpdate(string[] splitData)
         {
-            throw new NotImplementedException();
+            // Should only have 4 peices
+            if (splitData.Length == 4)
+            {
+                DocID = splitData[1];
+                string cellName = splitData[2];
+                string contents = splitData[3];
+
+                ISet<string> list = sheet.SetContentsOfCell(cellName, contents);
+                // get the value of the named cell
+                string value = sheet.GetCellValue(cellName).ToString();
+                // see if it's string or  double or fomula 
+                string content = PrintableContents(sheet.GetCellContents(cellName));
+                // set the cell value to the coordinate
+
+
+                // PROBABLY NEEDS TO BE CHANGED TO A SPLIT UP CELL NAME
+                spreadsheetPanel1.SetValue(col, row, value);
+                this.spreadsheetPanel1.Select();
+
+
+                IsPanleFocused = true;
+                Value_textBox.Text = value;
+                //for each string in the list,
+                foreach (string s in list)
+                {
+                    // convert the cell name to the coordinat
+                    NametoCoor(out col, out row, s);
+                    // set the cell value as the specific cell value
+                    spreadsheetPanel1.SetValue(col, row, sheet.GetCellValue(s).ToString());
+                }
+            }
         }
 
 
@@ -1170,7 +1261,7 @@ namespace SpreadsheetGUI
             {
                 foreach (string s in splitData)
                 {
-                    if (!Int32.TryParse(s, out temp) && s != "  " && s != "\n")
+                    if (!Int32.TryParse(s, out temp) && s != "\n" && s != "   " && AvailableFiles.Contains(s) == false)
                     {
                         AvailableFiles.Add(s);
                     }
@@ -1178,7 +1269,7 @@ namespace SpreadsheetGUI
             }
             if (AvailableFiles.Count > 0)
             {
-                // Make a tab for available files
+                // Add to some kind of menu
             }
         }
 
