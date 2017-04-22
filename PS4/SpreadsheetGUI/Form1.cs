@@ -73,6 +73,7 @@ namespace SpreadsheetGUI
         string FileName = "";
         string UserName = "";
         private List<string> AvailableFiles = new List<string>();
+        //Timer timer = new Timer()
 
 
 
@@ -129,71 +130,9 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            if (CurrentlyConnected)
-            {
-                try
-                {
-                    MessageBox.Show("Sending a 0");
-                    MessageBox.Show("ClientConnected: " + ClientSocket.Connected);
-                    // If no spreadsheet is currently open, request a list of available spreadsheets
-                    SpreadsheetNetworking.Send(ClientSocket, "", 0);
-                }
-                catch (Exception)
-                {
-                    // Send failed, set all networking stuff to null and allow reconnect attempt
-                    MessageBox.Show("You appear to be disconnected from the server");
-                    AllowReconnect();
-                }
-            }
-            /*
-            // if the sheet has not been changed, hide this form and create a new one
-            if (!(sheet.Changed))
-            {
-                //this.Hide();
-                //SSContextSingleton.getContext().RunForm(new Form1());
-    
-            }
-            else
-            {
-                // warning the user if they want to save first before creating
-                DialogResult result = MessageBox.Show("Do you want to save this spreadsheet before creating a new spreadsheet?",
-                    "Message", MessageBoxButtons.YesNoCancel);
-                // if yes, save the file
-                if (result == DialogResult.Yes)
-                {
-                    if (saveFileDialog1.ShowDialog() == DialogResult.OK)
-                    {
-                        try
-                        {
-                            filePath = saveFileDialog1.FileName;
-                            backgroundWorker1.RunWorkerAsync();
-                            MessageBox.Show("Saved.");
+            OpenForm form = new OpenForm(AvailableFiles, ClientSocket);
+            form.Show();
 
-                            getFileName();
-                            this.Text = docName;
-                        }
-                        catch (SpreadsheetReadWriteException)
-                        {
-                            MessageBox.Show("Unable to save.");
-                        }
-                        this.Hide();
-                        SSContextSingleton.getContext().RunForm(new Form1());
-                    }
-                }
-                // if no, hide the form and creat a new one
-                if (result == DialogResult.No)
-                {
-                    this.Hide();
-                    SSContextSingleton.getContext().RunForm(new Form1());
-
-                }
-                // if cancle, do nothing
-                if (result == DialogResult.Cancel)
-                {
-                    return;
-                }
-            }
-            */
         }
 
         /// <summary>
@@ -203,112 +142,15 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            AvailableFiles.Add("Testing");
             if (AvailableFiles.Count > 0)
             {
                 OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket);
                 fileForm.Show();
             }
-            // if the sheet has not been changed, directely open the target sheet
-            if (!(sheet.Changed))
-            {
-                /*
-                this.Hide();
-                OpenFileDialog OpenFileDialog1 = new OpenFileDialog();
-                OpenFileDialog1.Filter = "Spreadsheet files|*.sprd|All Files|*.*";
-                OpenFileDialog1.Title = "Open Saved Spreadsheet";
-                open(OpenFileDialog1);
-                */
-                if (AvailableFiles.Count > 0)
-                {
-                    foreach (string filename in AvailableFiles)
-                    {
-                        // Add file to dropdown
-                    }
-                }
-            }
-            
             else
             {
-                // warning the user if they want save the sheet at the first place
-                DialogResult result = MessageBox.Show("Do you want to save this spreadsheet before opening other spreadsheets?",
-                    "Message", MessageBoxButtons.YesNoCancel);
-                // if yes, save execute
-                if (result == DialogResult.Yes)
-                {
-                    if (saveFileDialog1.ShowDialog() == DialogResult.OK)
-                    {
-                        try
-                        {
-                            filePath = saveFileDialog1.FileName;
-                            backgroundWorker1.RunWorkerAsync();
-                            MessageBox.Show("Successfully saved.", "Message");
-                            getFileName();
-                            this.Text = docName;
-                        }
-                        catch (SpreadsheetReadWriteException)
-                        {
-                            MessageBox.Show("Unable to save.", "Message");
-                        }
-                        OpenFileDialog OpenFileDialog1 = new OpenFileDialog();
-                        OpenFileDialog1.Filter = "Spreadsheet files|*.sprd|All Files|*.*";
-                        OpenFileDialog1.Title = "Open Saved Spreadsheet";
-                        open(OpenFileDialog1);
-                    }
-                }
-                // if no, hide the sheet and open a target one
-                if (result == DialogResult.No)
-                {
-
-                    OpenFileDialog OpenFileDialog1 = new OpenFileDialog();
-                    OpenFileDialog1.Filter = "Spreadsheet files|*.sprd|All Files|*.*";
-                    OpenFileDialog1.Title = "Open Saved Spreadsheet";
-                    open(OpenFileDialog1);
-                }
-                // if cancel, do nothing
-                if (result == DialogResult.Cancel)
-                {
-                    return;
-                }
-            }
-        }
-
-        /// <summary>
-        /// private helper function to help open the file
-        /// </summary>
-        /// <param name="OpenFileDialog"></param>
-        private void open(OpenFileDialog OpenFileDialog)
-        {
-            /*
-            // if the user hit ok
-            if (OpenFileDialog.ShowDialog() == DialogResult.OK)
-            {
-                // set the file path to the OpenFileDialog.FileName
-                filePath = OpenFileDialog.FileName;
-
-                // change the extension of the file
-                System.IO.Path.ChangeExtension(filePath, ".xml");
-
-                // clear teh spreadsheetpanel and hide
-                spreadsheetPanel1.Clear();
-                this.Hide();
-
-                // create a new form1 instance
-                Form1 newform = new Form1(filePath);
-                try
-                {
-                    // run the form and setvalues to the cells
-                    SSContextSingleton.getContext().RunForm(newform);
-                    Display();
-                }
-                catch (SpreadsheetReadWriteException)
-                {
-                    // show a messagebox if the file cannot be opened
-                    MessageBox.Show("Unable to open the file.","Message");
-                }
-
-            }
-            */
+                MessageBox.Show("No available files");
+            }            
         }
 
 
@@ -402,34 +244,10 @@ namespace SpreadsheetGUI
         private void closeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // if there is no change in the sheet, close the sheet directely, send server the proper code
-            if (!(sheet.Changed))
-            {
-                SendCloseToServer();
-                Close();
-            }
-            else
-            {
-                // warning the user with message if dont save before closing
-                DialogResult result = MessageBox.Show("There are unsaved changes." +
-                    " Save your changes before closing?", "Message",
-                    MessageBoxButtons.YesNoCancel, MessageBoxIcon.Warning);
 
-                // if yes, save the file
-                if (result == DialogResult.Yes)
-                {
-                    saveToolStripMenuItem.PerformClick();
-                    SendCloseToServer();
-                }
-                // if no, close the file
-                if (result == DialogResult.No)
-                {
-                    SendCloseToServer();
-                    Close();
-                }
-                // if cancle, do nothing
-                if (result == DialogResult.Cancel)
-                    return;
-            }
+            SendCloseToServer();
+            Close();
+
         }
 
 
@@ -1194,6 +1012,7 @@ namespace SpreadsheetGUI
         private void ReceiveNewID(string[] splitData)
         {
             DocID = GetDocID(splitData);
+            Debug.WriteLine(DocID);
         }
 
 

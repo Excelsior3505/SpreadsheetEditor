@@ -370,7 +370,7 @@ namespace SS
             {
                 if (n.Equals(start))
                 {
-                    throw new CircularException();
+                    //throw new CircularException();
                 }
                 else if (!visited.Contains(n))
                 {

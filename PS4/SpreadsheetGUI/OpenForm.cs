@@ -58,6 +58,11 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void button1_Click(object sender, EventArgs e)
         {
+            if (fileNameBox.Text.Length < 1)
+            {
+                MessageBox.Show("Please enter a filename");
+                return;
+            }
             if (files.Contains(fileNameBox.Text))
             {
                 SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, 2);
@@ -65,7 +70,8 @@ namespace SpreadsheetGUI
             }
             else
             {
-                MessageBox.Show("That file is not on the server, please check your spelling and try again");
+                SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, 1);
+                Close();
             }
             
         }
