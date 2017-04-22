@@ -183,7 +183,7 @@ namespace ClientNetworking
                 // requesting a new document
                 message = Encoding.UTF8.GetBytes(formatCode + data + "\n");
             }
-
+            Debug.WriteLine(data + " " + formatCode.ToString());
             socket.BeginSend(message, 0, message.Length, SocketFlags.None, SendCallback, socket);
         }
 

@@ -497,28 +497,25 @@ namespace SpreadsheetGUI
         {
             // calls the Updatecell function
             //Updatecell();
-            if (userInput.Text != "" || userInput.Text !=" " || userInput.Text != "    ")
+            if (CurrentlyConnected && ClientSocket.Connected)
             {
-                if (CurrentlyConnected && ClientSocket.Connected)
+                try
                 {
-                    try
-                    {
-                        // Create the packet of form "3\DocID\tCellName\tnewContents\n
-                        string message = DocID + "\t" + ColRowtoString(col, row) + "\t" + userInput.Text;
-                        SpreadsheetNetworking.Send(ClientSocket, message, 3);
-                    }
-                    catch(Exception)
-                    {
-                        MessageBox.Show("Could not update cell: " + ColRowtoString(col, row));
-                        AllowReconnect();
-                    }
+                    // Create the packet of form "3\DocID\tCellName\tnewContents\n
+                    string message = DocID + "\t" + ColRowtoString(col, row) + "\t" + userInput.Text;
+                    SpreadsheetNetworking.Send(ClientSocket, message, 3);
                 }
-                else
+                catch (Exception)
                 {
-                    ipBox.Enabled = true;
-                    usernameBox.Enabled = true;
-                    CurrentlyConnected = false;
+                    MessageBox.Show("Could not update cell: " + ColRowtoString(col, row));
+                    AllowReconnect();
                 }
+            }
+            else
+            {
+                ipBox.Enabled = true;
+                usernameBox.Enabled = true;
+                CurrentlyConnected = false;
             }
         }
 
@@ -560,7 +557,7 @@ namespace SpreadsheetGUI
             {
                 Value_textBox.Text = "Eval Error"; return;
             }
-
+            
         }
 
         /// <summary>
@@ -716,28 +713,25 @@ namespace SpreadsheetGUI
         {
             if (e.KeyChar == (char)Keys.Return)
             {
-                if (userInput.Text != "" && userInput.Text != " " && userInput.Text != "    ")
+                if (CurrentlyConnected && ClientSocket.Connected)
                 {
-                    if (CurrentlyConnected && ClientSocket.Connected)
+                    try
                     {
-                        try
-                        {
-                            // Create the packet of form "3\DocID\tCellName\tnewContents\n
-                            string message = DocID + "\t" + ColRowtoString(col, row) + "\t" + userInput.Text;
-                            SpreadsheetNetworking.Send(ClientSocket, message, 3);
-                        }
-                        catch (Exception)
-                        {
-                            MessageBox.Show("Could not update cell: " + ColRowtoString(col, row));
-                            AllowReconnect();
-                        }
+                        // Create the packet of form "3\DocID\tCellName\tnewContents\n
+                        string message = DocID + "\t" + ColRowtoString(col, row) + "\t" + userInput.Text;
+                        SpreadsheetNetworking.Send(ClientSocket, message, 3);
                     }
-                    else
+                    catch (Exception)
                     {
-                        ipBox.Enabled = true;
-                        usernameBox.Enabled = true;
-                        CurrentlyConnected = false;
+                        MessageBox.Show("Could not update cell: " + ColRowtoString(col, row));
+                        AllowReconnect();
                     }
+                }
+                else
+                {
+                    ipBox.Enabled = true;
+                    usernameBox.Enabled = true;
+                    CurrentlyConnected = false;
                 }
                 //Updatecell();
             }
@@ -776,7 +770,8 @@ namespace SpreadsheetGUI
             {
                 try
                 {
-                    SpreadsheetNetworking.Send(ClientSocket, DocID + "\t" + ColRowtoString(col, row), 8);
+                    string message = DocID + "\t" + ColRowtoString(col, row);
+                    SpreadsheetNetworking.Send(ClientSocket, message, 8);
                 }
                 catch (Exception)
                 {
@@ -1032,7 +1027,7 @@ namespace SpreadsheetGUI
             lock (state.sb)
             {
                 data = state.sb.ToString();
-                MessageBox.Show("Received Message: " + data);
+                MessageBox.Show(data);
                 // Split at newline
             }
             // Split messages at the newline and then break that up by tabs
@@ -1057,7 +1052,7 @@ namespace SpreadsheetGUI
                     ReceiveValidOpen(splitData);
                     break;
                 case "3":
-                    ReceiveCellUpdate(splitData);
+                    ReceiveCellUpdate(splitData, state);
                     break;
                 case "4":
                     ReceiveValidEdit(splitData);
@@ -1088,10 +1083,9 @@ namespace SpreadsheetGUI
 
         private void ReceiveEditLocation(string[] splitData)
         {
-            foreach (string s in splitData)
-            {
-                MessageBox.Show(s);
-            }
+            string data = "";
+
+            //MessageBox.Show("Received packet: " + data);
         }
 
 
@@ -1101,7 +1095,7 @@ namespace SpreadsheetGUI
         /// <param name="splitData"></param>
         private void ReceiveInvalidRename(string[] splitData)
         {
-            DocID = GetDocID(splitData);
+            //DocID = GetDocID(splitData);
             MessageBox.Show("The spreadsheet rename attempt was unsuccessful");
         }
 
@@ -1112,7 +1106,7 @@ namespace SpreadsheetGUI
         /// <param name="splitData"></param>
         private void ReceiveValidRename(string[] splitData)
         {
-            DocID = GetDocID(splitData);
+            //DocID = GetDocID(splitData);
             if (DocID != "-1")
             {
                 MessageBox.Show("Spreadsheet successfully renamed");
@@ -1147,7 +1141,7 @@ namespace SpreadsheetGUI
         /// <param name="splitData"></param>
         private void ReceiveInvalidEdit(string[] splitData)
         {
-            DocID = GetDocID(splitData);
+            //DocID = GetDocID(splitData);
             MessageBox.Show("This caused an error on the server, please change the value");
         }
 
@@ -1158,7 +1152,7 @@ namespace SpreadsheetGUI
         /// <param name="splitData"></param>
         private void ReceiveValidEdit(string[] splitData)
         {
-            DocID = GetDocID(splitData);
+            //DocID = GetDocID(splitData);
         }
 
 
@@ -1166,39 +1160,10 @@ namespace SpreadsheetGUI
         /// Updates the actual value of the cell
         /// </summary>
         /// <param name="splitData"></param>
-        private void ReceiveCellUpdate(string[] splitData)
+        private void ReceiveCellUpdate(string[] splitData, SpreadsheetNetworking.SocketState state)
         {
-            // Should only have 4 peices
-            if (splitData.Length == 4)
-            {
-                DocID = splitData[1];
-                string cellName = splitData[2];
-                string contents = splitData[3];
-
-                ISet<string> list = sheet.SetContentsOfCell(cellName, contents);
-                // get the value of the named cell
-                string value = sheet.GetCellValue(cellName).ToString();
-                // see if it's string or  double or fomula 
-                string content = PrintableContents(sheet.GetCellContents(cellName));
-                // set the cell value to the coordinate
-
-
-                // PROBABLY NEEDS TO BE CHANGED TO A SPLIT UP CELL NAME
-                spreadsheetPanel1.SetValue(col, row, value);
-                this.spreadsheetPanel1.Select();
-
-
-                IsPanleFocused = true;
-                Value_textBox.Text = value;
-                //for each string in the list,
-                foreach (string s in list)
-                {
-                    // convert the cell name to the coordinat
-                    NametoCoor(out col, out row, s);
-                    // set the cell value as the specific cell value
-                    spreadsheetPanel1.SetValue(col, row, sheet.GetCellValue(s).ToString());
-                }
-            }
+            SpreadsheetNetworking.GetData(state);
+            Updatecell();
         }
 
 
@@ -1270,6 +1235,7 @@ namespace SpreadsheetGUI
             if (AvailableFiles.Count > 0)
             {
                 // Add to some kind of menu
+                
             }
         }
 
