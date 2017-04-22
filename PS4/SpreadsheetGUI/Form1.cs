@@ -129,27 +129,29 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            if (CurrentlyConnected)
+            {
+                try
+                {
+                    MessageBox.Show("Sending a 0");
+                    MessageBox.Show("ClientConnected: " + ClientSocket.Connected);
+                    // If no spreadsheet is currently open, request a list of available spreadsheets
+                    SpreadsheetNetworking.Send(ClientSocket, "", 0);
+                }
+                catch (Exception)
+                {
+                    // Send failed, set all networking stuff to null and allow reconnect attempt
+                    MessageBox.Show("You appear to be disconnected from the server");
+                    AllowReconnect();
+                }
+            }
+            /*
             // if the sheet has not been changed, hide this form and create a new one
             if (!(sheet.Changed))
             {
                 //this.Hide();
                 //SSContextSingleton.getContext().RunForm(new Form1());
-                if (CurrentlyConnected)
-                {
-                    try
-                    {
-                        MessageBox.Show("Sending a 0");
-                        MessageBox.Show("ClientConnected: " + ClientSocket.Connected);
-                        // If no spreadsheet is currently open, request a list of available spreadsheets
-                        SpreadsheetNetworking.Send(ClientSocket, "", 0);
-                    }
-                    catch (Exception)
-                    {
-                        // Send failed, set all networking stuff to null and allow reconnect attempt
-                        MessageBox.Show("You appear to be disconnected from the server");
-                        AllowReconnect();
-                    }
-                }
+    
             }
             else
             {
@@ -191,6 +193,7 @@ namespace SpreadsheetGUI
                     return;
                 }
             }
+            */
         }
 
         /// <summary>
@@ -200,6 +203,12 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            AvailableFiles.Add("Testing");
+            if (AvailableFiles.Count > 0)
+            {
+                OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket);
+                fileForm.Show();
+            }
             // if the sheet has not been changed, directely open the target sheet
             if (!(sheet.Changed))
             {
@@ -270,6 +279,7 @@ namespace SpreadsheetGUI
         /// <param name="OpenFileDialog"></param>
         private void open(OpenFileDialog OpenFileDialog)
         {
+            /*
             // if the user hit ok
             if (OpenFileDialog.ShowDialog() == DialogResult.OK)
             {
@@ -298,6 +308,7 @@ namespace SpreadsheetGUI
                 }
 
             }
+            */
         }
 
 
@@ -1027,7 +1038,6 @@ namespace SpreadsheetGUI
             lock (state.sb)
             {
                 data = state.sb.ToString();
-                MessageBox.Show(data);
                 // Split at newline
             }
             // Split messages at the newline and then break that up by tabs
