@@ -35,6 +35,11 @@ void ClientConnection::receive_username(const boost::system::error_code& error)
       std::getline(is, newIncoming);
 
       newIncoming = "10\t" + newIncoming;
+
+      if (!is.eof())
+	{
+	  newIncoming = newIncoming + '\n';
+	}
       
       incoming_message_queue.push(newIncoming);
 
@@ -62,6 +67,11 @@ void ClientConnection::receive_message_loop(const boost::system::error_code& err
       std::string newIncoming;
       std::istream is (&in_stream_buf);
       std::getline(is, newIncoming);
+
+      if (!is.eof())
+	{
+	  newIncoming = newIncoming + '\n';
+	}
       
       incoming_message_queue.push(newIncoming);
 

@@ -93,6 +93,7 @@ void Server::send(int clientID, int docID, std::string message)
     {
       if (clients[clientID] != NULL)
 	{
+	  std::cout << "To client " << clientID << std::endl;
 	  clients[clientID]->send(message);
 	}
     }
@@ -101,9 +102,24 @@ void Server::send(int clientID, int docID, std::string message)
 //Process all received messages
 void Server::processMessage(int clientID, std::string messageToProcess)
 {
+
+  if (messageToProcess[messageToProcess.length()-1] != '\n')
+    {
+      std::cout << "Partial Message Received: " << messageToProcess << std::endl;
+      partialMessage = partialMessage + messageToProcess;
+      return;
+    }
+
+  if (!partialMessage.empty() && messageToProcess[messageToProcess.length()-1] == '\n')
+    {
+      messageToProcess = partialMessage + messageToProcess;
+      std::cout << "Full message received: " << messageToProcess << std::endl;
+      partialMessage.erase();
+    }
+
   //TODO: process the various kinds of messages
   std::cout << "Server received message: " << std::endl;
-  std::cout << messageToProcess << std::endl;
+  std::cout << messageToProcess;
   std::cout <<"From client: " << clientID << std::endl;
 
   received_messages.push(std::pair<int, std::string>(clientID, messageToProcess));
@@ -197,54 +213,119 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 
     case 3:    //Edit
       {
-	//Extract docID, cell, and new contents from message
-	std::istringstream iss(data[1]);
-	int docID;
-	iss >> docID;
-	std::string cell = data[2];
-	std::string content = data[3];
-	
-	//Check for circular dependancy
-	//If no error:
-	//{
-	//    send valid update message to client
-	//    store previous value of cell in undo list
-	//    update contents of cell
-	//    spreadsheets[docID].set_cell(cell, content);
-	//    send update to all clients working on docID
-	//}
-	//If error:
-	//{
-	//    send invalid edit message to client
-	//}
+	if (data.size() == 4)
+	  {
+	    //Extract docID, cell, and new contents from message
+	    std::istringstream iss(data[1]);
+	    int docID;
+	    iss >> docID;
+	    std::string docIDSend = data[1];
+	    std::string cell = data[2];
+	    std::string content = data[3];
+	    
+	    //TODO: create update_cell method for base_ss
+	    //      method should:
+	    //          check for circular dependancy (return num indicating if one was found)
+	    //          store old value in undo list	
+	    //          update value of cell
+	    //          clear redo list
+	    int ret = 0;//spreadsheets[docID]->set_cell(cell, content);
+	    if (ret > 0) //ERROR: circular dependancy
+	      {
+		std::string invalidEdit = "5\t" + docIDSend + "\n";
+		send(clientID, -1, invalidEdit);
+	      }
+	    else //Edit is valid
+	      {
+		std::string validEdit = "4\t" + docIDSend + "\n";
+		std::string cellUpdate = "3\t" + docIDSend + "\t" + cell + "\t" + content + "\n";
+		send(clientID, -1, validEdit);
+		send(-1, docID, cellUpdate);
+	      }
+	  }
+	else if (data.size() > 1)
+	  {
+	    std::string docIDSend = data[1];
+	    std::string invalidEdit = "5\t" + docIDSend + "\n";
+	    send(clientID, -1, invalidEdit);
+	  }
 	break;
       }
 
     case 4:    //Undo
       {
-	//Extract docID from message
-	std::istringstream is(data[1]);
-	int docID;
-	is >> docID;
-	
+	/*
 	//If there are changes to undo:
 	//    store current value of cell in redo list
 	//    change contents of cell to last contents in undo list
 	//    send update to all clients working on docID
+
+	//Extract docID from message
+	std::string docIDSend = data[1];
+	std::istringstream is(data[1]);
+	int docID;
+	is >> docID;
+	
+	if (!spreadsheets[docID]->undo.empty())
+	  {
+	    std::pair<std::string, std::string> lastEdit = spreadsheets[docID]->undo.back();
+	    spreadsheets[docID]->undo.pop_back();
+
+	    std::string cell = lastEdit.first();
+	    std::string contents = lastEdit.second();
+	    
+	    int ret = 0;// spreadsheets[docID]->set_cell(cell, contents);
+	    if (ret > 0) //ERROR
+	      {
+		std::string invalidEdit = "5\t" + docIDSend + "\n";
+		send(clientID, -1, invalidEdit);
+	      }
+	    else //Edit is valid
+	      {
+		std::string validEdit = "4\t" + docIDSend + "\n";
+		std::string cellUpdate = "3\t" + docIDSend + "\t" + cell + "\t" + content + "\n";
+		send(clientID, -1, validEdit);
+		send(-1, docID, cellUpdate);
+	      }
+	      } */
 	break;
       }
 
     case 5:    //Redo
-      {
-	//Extract docID from message
-	std::istringstream iss1(data[1]);
-	int docID;
-	iss1 >> docID;
-	
+      { /*
 	//If there are changes to redo:
 	//    Store current contents of cell in undo list
 	//    Change contents of cell to last contents in redo list
 	//    Send update to all clients working on docID
+
+	//Extract docID from message
+	std::string docIDSend = data[1];
+	std::istringstream iss1(data[1]);
+	int docID;
+	iss1 >> docID;
+	
+	if (!spreadsheets[docID]->redo.empty())
+	  {
+	    std::pair<std::string, std::string> lastEdit = spreadsheets[docID]->redo.back();
+	    spreadsheets[docID]->redo.pop_back();
+	    
+	    std::string cell = lastEdit.first();
+	    std::string contents = lastEdit.second();
+	    
+	    int ret = 1;//spreadsheets[docID]->set_cell(cell, contents);
+	    if (ret > 0) //ERROR
+	      {
+		std::string invalidEdit = "5\t" + docIDSend + "\n";
+		send(clientID, -1, invalidEdit);
+	      }
+	    else //Edit is valid
+	      {
+		std::string validEdit = "4\t" + docIDSend + "\n";
+		std::string cellUpdate = "3\t" + docIDSend + "\t" + cell + "\t" + content + "\n";
+		send(clientID, -1, validEdit);
+		send(-1, docID, cellUpdate);
+	      }
+	      }*/
 	break;
       }
 
@@ -270,22 +351,25 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	//    change name of document
 	break;
       }
-    case 8:
+    case 8: //Edit Location
       {
-	//Extract docID and cellName from message
-	std::string docIDSend = data[1];
-	std::string clientIDSend = std::to_string(clientID);
-
-	std::istringstream iss1(data[1]);
-	int docID;
-	iss1 >> docID;
-	std::string cellName = data[2];
-
-	std::string userN = clients[clientID]->username;
-	
-	//Let other users working on document docID what cell clientID is editing
-	std::string editLocation = "A\t" + docIDSend + "\t" + cellName + "\t" + clientIDSend + "\t" + userN + "\n";
-	send(-1, docID, editLocation);
+	if (data.size() == 3)
+	  {
+	    //Extract docID and cellName from message
+	    std::string docIDSend = data[1];
+	    std::string clientIDSend = std::to_string(clientID);
+	    
+	    std::istringstream iss1(data[1]);
+	    int docID;
+	    iss1 >> docID;
+	    std::string cellName = data[2];
+	    
+	    std::string userN = clients[clientID]->username;
+	    
+	    //Let other users working on document docID what cell clientID is editing
+	    std::string editLocation = "A\t" + docIDSend + "\t" + cellName + "\t" + clientIDSend + "\t" + userN + "\n";
+	    send(-1, docID, editLocation);
+	  }
 	break;
       }
     case 9:    //Close document
@@ -316,6 +400,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	break;
       }
     }
+  std::cout << std::endl << std::endl;
 }
 
 void Server::loadSpreadsheet(std::string file_name)
