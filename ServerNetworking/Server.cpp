@@ -176,13 +176,17 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 		if(!found)
 		  {
 		    int docID = spreadsheets.size();
-		    loadSpreadsheet("../files/" + fileName);
+		    base_ss newSS = base_ss();
+		    spreadsheets.push_back(&newSS);
+		    spreadsheets.back()->loadSS("../files/" + fileName);
 		  }
 	      }
 	    else
 	      {
 		int docID = 0;
-		loadSpreadsheet("../files/" + fileName);
+		base_ss newSS = base_ss();
+		spreadsheets.push_back(&newSS);
+		spreadsheets.back()->loadSS("../files/" + fileName);
 	      }
 	    //If it does, send docID
 	  }
@@ -317,12 +321,6 @@ void Server::processMessage(int clientID, std::string messageToProcess)
       }
     }
 }
-
-void Server::loadSpreadsheet(std::string file_name)
-{
-
-}
-
 
 //Extracts data from message string sent from client
 std::vector<std::string> Server::split_message(std::string message)
