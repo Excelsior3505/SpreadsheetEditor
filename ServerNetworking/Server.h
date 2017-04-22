@@ -26,7 +26,7 @@ class Server
   std::vector<client_ptr> clients;
   std::queue< std::pair< int, std::string> > received_messages;
   std::vector<int> clientID_toDocID;
-  std::vector<base_ss> spreadsheets;
+  std::vector<base_ss*> spreadsheets;
   int nextID;
 
   Server(boost::asio::io_service& io_service_, const boost::asio::ip::tcp::endpoint& endP);
