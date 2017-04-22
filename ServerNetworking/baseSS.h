@@ -10,17 +10,19 @@
 #include <boost/archive/text_iarchive.hpp>
 #include <boost/archive/text_oarchive.hpp>
 #include <boost/algorithm/string.hpp>
+#include <boost/enable_shared_from_this.hpp>
+#include <boost/shared_ptr.hpp>
 #include "dpgraph.h"
 
 class base_ss
+: public boost::enable_shared_from_this<base_ss>
 {
- private:
-
-  std::map <std::string, std::string> spreadsheet;
-
  public:
+typedef boost::shared_ptr<base_ss> base_ss_ptr;
 
- base_ss();
+std::map <std::string, std::string> spreadsheet;
+static base_ss_ptr create(std::string version);
+base_ss(std::string version);
  ~base_ss();
  int get_size();
  std::string get_contents(std::string key);

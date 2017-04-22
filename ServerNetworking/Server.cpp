@@ -21,6 +21,7 @@
 using boost::asio::ip::tcp;
 
 typedef boost::shared_ptr<ClientConnection> client_ptr;
+typedef boost::shared_ptr<base_ss> base_ss_ptr;
 
 //Default constructor for the server
 Server::Server(boost::asio::io_service& io_service_, const boost::asio::ip::tcp::endpoint& endP)
@@ -162,7 +163,14 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	    //If it does not, send new docID
 	    int docID = spreadsheets.size();
 	    clientID_toDocID[clientID] = docID;
-	    //TODO: create new spreadsheet object
+	    //create new spreadsheet object
+	    base_ss::base_ss_ptr newSS = base_ss::create("1.0"); 
+	    newSS->name = fileName;
+	    spreadsheets.push_back(newSS);
+	    std::string docIDSend = std::to_string(docID);
+	    std::string newFileMessage = "1\t" + docIDSend + "\n"; 
+	    send(clientID, -1, newFileMessage);
+
 	  }
 	break;
       }
@@ -179,12 +187,13 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	    if(spreadsheets.size() > 0)
 	      {
 		bool found = false;
-		for(std::vector<base_ss*>::iterator it = spreadsheets.begin(); it != spreadsheets.end(); it++)
+		for(std::vector<base_ss_ptr>::iterator it = spreadsheets.begin(); it != spreadsheets.end(); it++)
 		  {
 		    if((*it)->name == fileName)
 		      {
 			int docID = loc;
 			found = true;
+			clientID_toDocID[clientID] = docID;
 			break;
 		      }
 		    loc++;
@@ -192,17 +201,46 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 		if(!found)
 		  {
 		    int docID = spreadsheets.size();
-		    base_ss newSS = base_ss();
-		    spreadsheets.push_back(&newSS);
+		    base_ss::base_ss_ptr newSS = base_ss::create("1.0"); 
+		    spreadsheets.push_back(newSS);
 		    spreadsheets.back()->loadSS("../files/" + fileName);
-		  }
+		    
+		    std::string validOpen  = "2\t" + std::to_string(docID) + "\n";
+		    send(clientID, -1, validOpen);
+
+		    std::map<std::string, std::string>::iterator it;
+		    for (it = spreadsheets.back()->spreadsheet.begin(); it != spreadsheets.back()->spreadsheet.end(); ++it)
+		      {
+			std::string cell = it->first;
+			std::string content = it->second;
+			
+			std::string update  = "3\t" + std::to_string(docID) + "\t" + cell + "\t" + content + "\n";
+			send(clientID, -1, update); 
+		      }
+		    clientID_toDocID[clientID] = docID;
+		  }	
 	      }
 	    else
 	      {
 		int docID = 0;
-		base_ss newSS = base_ss();
-		spreadsheets.push_back(&newSS);
+		base_ss::base_ss_ptr newSS = base_ss::create("1.0"); 
+		spreadsheets.push_back(newSS);
 		spreadsheets.back()->loadSS("../files/" + fileName);
+		
+		std::string validOpen  = "2\t" + std::to_string(docID) + "\n";
+		send(clientID, -1, validOpen);
+		
+		std::map<std::string, std::string>::iterator it;
+		for (it = spreadsheets.back()->spreadsheet.begin(); it != spreadsheets.back()->spreadsheet.end(); ++it)
+		  {
+		    std::string cell = it->first;
+		    std::string content = it->second;
+		    
+		    std::string update  = "3\t" + std::to_string(docID) + "\t" + cell + "\t" + content + "\n";
+		    send(clientID, -1, update); 
+		  }
+		
+		clientID_toDocID[clientID] = docID;
 	      }
 	    //If it does, send docID
 	  }
@@ -223,9 +261,16 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	    std::istringstream iss(data[1]);
 	    int docID;
 	    iss >> docID;
+	    if (docID == -1)
+	      {
+		break;
+	      }
 	    std::string docIDSend = data[1];
 	    std::string cell = data[2];
 	    std::string content = data[3];
+
+	    std::cout << "Cell: " << cell << std::endl;
+	    std::cout << "content: " << content << std::endl;
 	    
 	    //TODO: create update_cell method for base_ss
 	    //      method should:
@@ -233,7 +278,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	    //          store old value in undo list	
 	    //          update value of cell
 	    //          clear redo list
-	    int ret = 0;//spreadsheets[docID]->set_cell(cell, content);
+	    int ret = spreadsheets[docID]->set_cell(cell, content);
 	    if (ret > 0) //ERROR: circular dependancy
 	      {
 		std::string invalidEdit = "5\t" + docIDSend + "\n";
@@ -258,7 +303,6 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 
     case 4:    //Undo
       {
-	/*
 	//If there are changes to undo:
 	//    store current value of cell in redo list
 	//    change contents of cell to last contents in undo list
@@ -274,9 +318,9 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	  {
 	    std::pair<std::string, std::string> lastEdit = spreadsheets[docID]->undo.back();
 	    spreadsheets[docID]->undo.pop_back();
-
-	    std::string cell = lastEdit.first();
-	    std::string contents = lastEdit.second();
+	    
+	    std::string cell = lastEdit.first;
+	    std::string content = lastEdit.second;
 	    
 	    int ret = 0;// spreadsheets[docID]->set_cell(cell, contents);
 	    if (ret > 0) //ERROR
@@ -291,12 +335,12 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 		send(clientID, -1, validEdit);
 		send(-1, docID, cellUpdate);
 	      }
-	      } */
+	  }
 	break;
       }
 
     case 5:    //Redo
-      { /*
+      { 
 	//If there are changes to redo:
 	//    Store current contents of cell in undo list
 	//    Change contents of cell to last contents in redo list
@@ -313,8 +357,8 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	    std::pair<std::string, std::string> lastEdit = spreadsheets[docID]->redo.back();
 	    spreadsheets[docID]->redo.pop_back();
 	    
-	    std::string cell = lastEdit.first();
-	    std::string contents = lastEdit.second();
+	    std::string cell = lastEdit.first;
+	    std::string content = lastEdit.second;
 	    
 	    int ret = 1;//spreadsheets[docID]->set_cell(cell, contents);
 	    if (ret > 0) //ERROR
@@ -329,7 +373,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 		send(clientID, -1, validEdit);
 		send(-1, docID, cellUpdate);
 	      }
-	      }*/
+	  }
 	break;
       }
 
@@ -338,6 +382,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	int docID = clientID_toDocID[clientID];
 	
 	//Save the current state of the document the client is working on
+	spreadsheets[docID]->saveSS("../files/" + spreadsheets[docID]->name);
 	break;
       }
 

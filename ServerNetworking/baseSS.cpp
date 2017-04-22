@@ -1,8 +1,14 @@
 #include "baseSS.h"
 
-base_ss::base_ss()
+base_ss::base_ss_ptr base_ss::create(std::string version)
 {
-  set_cell("Version:", "1.0");
+  return base_ss_ptr(new base_ss(version));
+}
+
+base_ss::base_ss(std::string version)
+{
+  set_cell("Version:", version);
+  set_cell("A1", "66");
 }
 
 base_ss::~base_ss()
@@ -26,21 +32,29 @@ int base_ss::set_cell(std::string key, std::string content)
     {
       dep_graph.replace_dependents(key, std::set<std::string>());
     }
+
   if(content[0] == '=')
     {
       boost::to_upper(content);
-      for(std::string::iterator i = content.begin(); i != content.end(); i++)
+      for(int i = 0; i < content.size(); i++)
 	{
-	  if(*i <= 'Z' && *i >= 'A')
+	  char c = content[i];
+	  if(c <= 'Z' && c >= 'A')
 	    {
-	      std::string dep = "" + *i;
-	      std::string::iterator t = i;
-	      t++;
-	      while(*t <= '9' && *t >= '0')
+	      std::vector<char> dep;
+	      dep.push_back(c);
+	      i++;
+	      c = content[i];
+	      while(c <= '9' && c >= '0' && i < content.size())
 		{
-		  dep += *t;
+		  dep.push_back(c);
+		  i++;
+		  c = content[i];
 		}
-	      if(dep_graph.add_dependency(key, dep) == 1)
+	      
+	      std::string dependancy(dep.begin(), dep.end());
+	      std::cout << "Dep: " <<  dependancy << std::endl;
+	      if(dep_graph.add_dependency(key, dependancy) == 1)
 		{
 		  return 1;
 		}
@@ -51,7 +65,7 @@ int base_ss::set_cell(std::string key, std::string content)
     {
       dep_graph.replace_dependents(key, std::set<std::string>());
     }
-  if(spreadsheet.count(key) != 1)
+  if(spreadsheet.find(key) == spreadsheet.end())
     {
       spreadsheet.insert( std::pair<std::string, std::string> (key, ""));
     }

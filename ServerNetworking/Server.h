@@ -16,6 +16,7 @@
 
 class ClientConnection;
 typedef boost::shared_ptr<ClientConnection> client_ptr;
+typedef boost::shared_ptr<base_ss> base_ss_ptr;
 
 class Server
 {
@@ -26,7 +27,7 @@ class Server
   std::vector<client_ptr> clients;
   std::queue< std::pair< int, std::string> > received_messages;
   std::vector<int> clientID_toDocID;
-  std::vector<base_ss*> spreadsheets;
+  std::vector<base_ss_ptr> spreadsheets;
   std::string partialMessage;
   int nextID;
 
