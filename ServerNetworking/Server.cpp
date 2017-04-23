@@ -151,6 +151,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
       {
 	//Extract file name from message
 	std::string fileName = data[1];
+	/*
 	std::string hasSS = "";
 
 	size_t pos = fileName.find_last_of(".");
@@ -163,7 +164,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	  }
 	else
 	  fileName = fileName + ".ss";
-	
+	*/
 	//Check if name exists
 	if(boost::filesystem::exists("../files/" + fileName))
 	  {
@@ -191,8 +192,10 @@ void Server::processMessage(int clientID, std::string messageToProcess)
       {
 	//Extract file name from message
 	std::string fileName = data[1];
+	
 	std::string hasSS = "";
 	size_t pos = fileName.find_last_of(".");
+	fileName = fileName.substr(0, pos);
 	if(pos != std::string::npos)
 	  {
 	    hasSS = fileName.substr(pos);
@@ -203,7 +206,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	  }
 	else
 	  fileName = fileName + ".ss";
-	
+
 	//Check if name exists
 	if(boost::filesystem::exists("../files/" + fileName))
 	  {
@@ -422,7 +425,8 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	int docID = clientID_toDocID[clientID];
 	
 	//Save the current state of the document the client is working on
-	spreadsheets[docID]->saveSS("../files/" + spreadsheets[docID]->name + ".ss");
+	std::string name = "../files/" + spreadsheets[docID]->name + ".ss";
+	spreadsheets[docID]->saveSS(name);
 	break;
       }
 
@@ -430,8 +434,8 @@ void Server::processMessage(int clientID, std::string messageToProcess)
       {
 	//Extract new filename from message
 	std::string fileName = data[1];
-	std::string hasSS = "";
-
+	//std::string hasSS = "";
+	/*
 	size_t pos = fileName.find_last_of(".");
 	if(pos != std::string::npos)
 	  {
@@ -442,19 +446,27 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	  }
 	else
 	  fileName = fileName + ".ss";
-
-	int docID = clientID_toDocID[clientID];
+	*/
+        std::istringstream iss2(data[1]);
+	int docID;
+	iss2 >> docID;
         
 	//If new filename is already in use on server:
         if(boost::filesystem::exists("../files/" + fileName + ".ss"))
 	  {
 	    //send packet with opcode 9 to client indicating invalid name
+	    std::string invalidName = "9\t" + std::to_string(docID) + "\n";
+	    send(clientID, -1, invalidName); 
 	    break;
 	  }
 	//If new filename is valid:
 	//    send packet with opcode 8 to client indicating rename accepted
 	//    send packet with opcode 6 to all clients working on doc with to indicate rename occurred
 	//    change name of document
+	std::string validName = "8\t" + std::to_string(docID) + "\n";
+	std::string rename = "6\t" + std::to_string(docID) + "\t" + fileName + "\n";
+	send(clientID, -1, validName);
+	send(-1, docID, rename);
 	spreadsheets[docID]->rename(fileName);
 	break;
       }
