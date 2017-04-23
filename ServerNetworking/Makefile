@@ -9,3 +9,6 @@ run:
 
 debug:
 	g++ -g -std=c++11 baseSS.cpp dpgraph.cpp ClientConnection.cpp Server.cpp RunServer.cpp -pthread /usr/local/lib/libboost_system.a /usr/local/lib/libboost_filesystem.a /usr/local/lib/libboost_serialization.a
+
+test:
+	g++ -g -std=c++11 baseSS.cpp dpgraph.cpp basesstest.cpp -pthread /usr/local/lib/libboost_system.a /usr/local/lib/libboost_filesystem.a /usr/local/lib/libboost_serialization.a

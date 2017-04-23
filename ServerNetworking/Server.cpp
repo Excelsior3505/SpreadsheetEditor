@@ -208,6 +208,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	if(boost::filesystem::exists("../files/" + fileName))
 	  {
 	    int loc = 0;
+	    std::cout << "Num Spreadsheets open: " << spreadsheets.size() << std::endl;
 	    if(spreadsheets.size() > 0)
 	      {
 		bool found = false;
@@ -215,20 +216,37 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 		  {
 		    if((*it)->name == fileName)
 		      {
+			std::cout << "Document was already open" << std::endl;
 			int docID = loc;
 			found = true;
 			clientID_toDocID[clientID] = docID;
+			std::string validOpen  = "2\t" + std::to_string(docID) + "\n";
+			send(clientID, -1, validOpen);
+			
+			std::map<std::string, std::string>::iterator it;
+			for (it = spreadsheets.back()->spreadsheet.begin(); it != spreadsheets.back()->spreadsheet.end(); ++it)
+			  {
+			    std::string cell = it->first;
+			    std::string content = it->second;
+			    
+			    if (it->first != "Version:")
+			      {
+				std::string update  = "3\t" + std::to_string(docID) + "\t" + cell + "\t" + content + "\n";
+				send(clientID, -1, update); 
+			      }	
+			  }
 			break;
 		      }
 		    loc++;
 		  }
 		if(!found)
 		  {
+		    std::cout << "Document not open" << std::endl;
 		    int docID = spreadsheets.size();
 		    base_ss::base_ss_ptr newSS = base_ss::create(); 
 		    spreadsheets.push_back(newSS);
 		    spreadsheets.back()->loadSS("../files/" + fileName);
-		    
+		    spreadsheets.back()->name = fileName;
 		    std::string validOpen  = "2\t" + std::to_string(docID) + "\n";
 		    send(clientID, -1, validOpen);
 
@@ -245,7 +263,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 			  }	
 		      }
 		    clientID_toDocID[clientID] = docID;
-		  }	
+		  }
 	      }
 	    else
 	      {
@@ -253,7 +271,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 		base_ss::base_ss_ptr newSS = base_ss::create(); 
 		spreadsheets.push_back(newSS);
 		spreadsheets.back()->loadSS("../files/" + fileName);
-		
+		spreadsheets.back()->name = fileName;
 		std::string validOpen  = "2\t" + std::to_string(docID) + "\n";
 		send(clientID, -1, validOpen);
 		
