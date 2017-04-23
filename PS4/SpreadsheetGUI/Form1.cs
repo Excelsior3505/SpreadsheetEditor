@@ -143,6 +143,7 @@ namespace SpreadsheetGUI
                 MessageBox.Show("You do not appear to be connected to the server");
                 AllowReconnect();
             }
+            System.Threading.Thread.Sleep(2000);
             OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket);
             fileForm.Show();
         }
@@ -171,7 +172,8 @@ namespace SpreadsheetGUI
                 MessageBox.Show("You do not appear to be connected to the server");
                 AllowReconnect();
             }
-            
+
+            System.Threading.Thread.Sleep(2000);
             if (AvailableFiles.Count > 0)
             {
                 OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket);
@@ -935,8 +937,6 @@ namespace SpreadsheetGUI
                         {
                             MessageBox.Show(s.Message);
                         }
-                        //Updatecell();
-                        //Display();
                         break;
                     case "4":
                         ReceiveValidEdit(splitData);
@@ -1016,7 +1016,7 @@ namespace SpreadsheetGUI
         /// <param name="splitData"></param>
         private void ReceieveRename(string[] splitData)
         {
-            throw new NotImplementedException();
+            
         }
 
 
