@@ -34,30 +34,41 @@ int base_ss::set_cell(std::string key, std::string content)
   if(content[0] == '=')
     {
       boost::to_upper(content);
+      std::set <std::string> old_dependents=dep_graph.get_dependents(key);
+      std::string old_content=get_contents(key);
+      dep_graph.replace_dependents(key, std::set<std::string>());
       for(int i = 0; i < content.size(); i++)
-	{
-	  char c = content[i];
-	  if(c <= 'Z' && c >= 'A')
-	    {
-	      std::vector<char> dep;
-	      dep.push_back(c);
-	      i++;
-	      c = content[i];
-	      while(c <= '9' && c >= '0' && i < content.size())
-		{
-		  dep.push_back(c);
-		  i++;
-		  c = content[i];
-		}
+	      { 
+	        char c = content[i];
+	        if(c <= 'Z' && c >= 'A')
+	        {
+	          std::vector<char> dep;
+	          dep.push_back(c);
+	          i++;
+	          c = content[i];
+	          while(c <= '9' && c >= '0' && i < content.size())
+		          {
+		            dep.push_back(c);
+		            i++;
+		            c = content[i];
+		          }
 	      
-	      std::string dependancy(dep.begin(), dep.end());
-	      std::cout << "Dep: " <<  dependancy << std::endl;
-	      if(dep_graph.add_dependency(key, dependancy) == 1)
-		{
-		  return 1;
-		}
-	    }
-	}
+	          //std::string dependancy(dep.begin(), dep.end());
+	         // std::cout << "Dep: " <<  dependancy << std::endl;
+	          if(dep_graph.add_dependency(key, dependancy) == 1)
+		          {
+		            return 1;
+		          } 
+	        } 
+
+	      }
+      if(spreadsheet.find(key) == spreadsheet.end())
+        {
+          spreadsheet.insert( std::pair<std::string, std::string> (key, ""));
+        }
+      spreadsheet[key] = content;
+      
+      return 0;
     }
   else
     {
