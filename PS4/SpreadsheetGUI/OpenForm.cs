@@ -16,6 +16,7 @@ namespace SpreadsheetGUI
     {
         public Socket clientSocket;
         public List<string> files;
+        int Opcode = -1;
 
         /// <summary>
         /// Opens a form that displays the available files to the user,
@@ -23,11 +24,12 @@ namespace SpreadsheetGUI
         /// </summary>
         /// <param name="fileList"></param>
         /// <param name="client"></param>
-        public OpenForm(List<string> fileList, Socket client)
+        public OpenForm(List<string> fileList, Socket client, int opCode)
         {
             clientSocket = client;
             files = fileList;
             InitializeComponent();
+            Opcode = opCode;
             fileNameBox.Text = "(filename)";
             if (fileList.Count > 0)
             {
@@ -65,13 +67,13 @@ namespace SpreadsheetGUI
             }
             if (files.Contains(fileNameBox.Text))
             {
-                SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, 2);
+                SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, Opcode);
                 Close();
             }
             else
             {
                 
-                SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, 1);
+                SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, Opcode);
                 Close();
             }
             
@@ -100,7 +102,7 @@ namespace SpreadsheetGUI
             if (fileListBox.SelectedItem != null)
             {
                 fileNameBox.Text = fileListBox.SelectedItem.ToString();
-                SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, 2);
+                SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, Opcode);
                 Close();
             }
         }

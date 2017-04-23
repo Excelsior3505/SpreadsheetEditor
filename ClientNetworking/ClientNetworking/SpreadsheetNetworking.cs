@@ -122,7 +122,7 @@ namespace ClientNetworking
             }
             catch (Exception e)
             {
-                return null;
+                throw e;
             }
             
         }

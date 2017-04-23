@@ -144,7 +144,7 @@ namespace SpreadsheetGUI
                 AllowReconnect();
             }
             System.Threading.Thread.Sleep(2000);
-            OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket);
+            OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket, 1);
             fileForm.Show();
         }
 
@@ -176,7 +176,7 @@ namespace SpreadsheetGUI
             System.Threading.Thread.Sleep(2000);
             if (AvailableFiles.Count > 0)
             {
-                OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket);
+                OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket, 2);
                 fileForm.Show();
             }
             else
@@ -262,7 +262,7 @@ namespace SpreadsheetGUI
         private void closeToolStripMenuItem_Click(object sender, EventArgs e)
         {
             // if there is no change in the sheet, close the sheet directely, send server the proper code
-
+            saveToolStripMenuItem_Click(sender, e);
             SendCloseToServer();
             Close();
 
@@ -751,6 +751,7 @@ namespace SpreadsheetGUI
             // Simple checks for input, could be improved upon later
             // Could also be a popup
             bool connect = true;
+            int timer = 0;
             if (ipBox.Text.Length < 5)
             {
                 ipBox.Text = "Invalid IP address";
@@ -769,14 +770,23 @@ namespace SpreadsheetGUI
             // Attempt to create a socket with the server
             if (connect)
             {
-                try
+                // Wait 30 seconds, attempting connection every 5 seconds
+                while (timer < 6 || !ClientSocket.Connected)
                 {
-                    ipBox.Enabled = false;
-                    usernameBox.Enabled = false;
-                    // Make a socket object to represent the connection, uses the IP passed in and default port
-                    ClientSocket = SpreadsheetNetworking.ConnectToServer(ipBox.Text, DefaultPort, Startup);
+                    try
+                    {
+                        ipBox.Enabled = false;
+                        usernameBox.Enabled = false;
+                        // Make a socket object to represent the connection, uses the IP passed in and default port
+                        ClientSocket = SpreadsheetNetworking.ConnectToServer(ipBox.Text, DefaultPort, Startup);
+                    }
+                    catch (Exception)
+                    {
+                        System.Threading.Thread.Sleep(5000);
+                        timer++;
+                    }
                 }
-                catch(Exception)
+                if (!ClientSocket.Connected)
                 {
                     MessageBox.Show("Failed to connect to server, please check IP and try again");
                     AllowReconnect();
@@ -1150,6 +1160,26 @@ namespace SpreadsheetGUI
                 {
                     MessageBox.Show("Failed to send undo request to server, check connection and try again");
                 }
+            }
+        }
+
+        /// <summary>
+        /// Send a rename request to the server
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private void renameToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            if (DocID != "-1" && ClientSocket.Connected)
+            {
+                
+                OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket, 7);
+                fileForm.Show();
+                saveToolStripMenuItem_Click(sender, e);
+            }
+            else
+            {
+                MessageBox.Show("You must first open a document");
             }
         }
     }
