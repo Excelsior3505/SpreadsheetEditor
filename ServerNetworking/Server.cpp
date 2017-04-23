@@ -157,6 +157,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	if(pos != std::string::npos)
 	  {
 	    hasSS = fileName.substr(pos+1);
+	    hasSS.erase(std::remove(hasSS.begin(), hasSS.end(), ' '), hasSS.end());
 	    if(hasSS != ".ss")
 	      fileName = fileName + ".ss";
 	  }
@@ -196,6 +197,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	if(pos != std::string::npos)
 	  {
 	    hasSS = fileName.substr(pos+1);
+	    hasSS.erase(std::remove(hasSS.begin(), hasSS.end(), ' '), hasSS.end());
 	    if(hasSS != ".ss")
 	      fileName = fileName + ".ss";
 	  }
@@ -418,6 +420,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	if(pos != std::string::npos)
 	  {
 	    hasSS = fileName.substr(pos+1);
+	    hasSS.erase(std::remove(hasSS.begin(), hasSS.end(), ' '), hasSS.end());
 	    if(hasSS != ".ss")
 	      fileName = fileName + ".ss";
 	  }
