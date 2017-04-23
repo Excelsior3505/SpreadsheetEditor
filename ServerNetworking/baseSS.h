@@ -3,6 +3,7 @@
 
 #include <map>
 #include <vector>
+#include <algorithm>
 #include <set>
 #include <string>
 #include <fstream>
@@ -21,8 +22,8 @@ class base_ss
 typedef boost::shared_ptr<base_ss> base_ss_ptr;
 
 std::map <std::string, std::string> spreadsheet;
-static base_ss_ptr create(std::string version);
-base_ss(std::string version);
+static base_ss_ptr create();
+base_ss();
  ~base_ss();
  int get_size();
  std::string get_contents(std::string key);

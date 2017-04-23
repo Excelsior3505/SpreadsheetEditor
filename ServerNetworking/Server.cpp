@@ -156,7 +156,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	size_t pos = fileName.find_last_of(".");
 	if(pos != std::string::npos)
 	  {
-	    hasSS = fileName.substr(pos+1);
+	    hasSS = fileName.substr(pos);
 	    hasSS.erase(std::remove(hasSS.begin(), hasSS.end(), ' '), hasSS.end());
 	    if(hasSS != ".ss")
 	      fileName = fileName + ".ss";
@@ -176,7 +176,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	    int docID = spreadsheets.size();
 	    clientID_toDocID[clientID] = docID;
 	    //create new spreadsheet object
-	    base_ss::base_ss_ptr newSS = base_ss::create("1.0"); 
+	    base_ss::base_ss_ptr newSS = base_ss::create(); 
 	    newSS->name = fileName;
 	    spreadsheets.push_back(newSS);
 	    std::string docIDSend = std::to_string(docID);
@@ -192,11 +192,11 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	//Extract file name from message
 	std::string fileName = data[1];
 	std::string hasSS = "";
-
 	size_t pos = fileName.find_last_of(".");
 	if(pos != std::string::npos)
 	  {
-	    hasSS = fileName.substr(pos+1);
+	    hasSS = fileName.substr(pos);
+	    std::cout << "hasSS: " << hasSS << std::endl;
 	    hasSS.erase(std::remove(hasSS.begin(), hasSS.end(), ' '), hasSS.end());
 	    if(hasSS != ".ss")
 	      fileName = fileName + ".ss";
@@ -225,7 +225,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 		if(!found)
 		  {
 		    int docID = spreadsheets.size();
-		    base_ss::base_ss_ptr newSS = base_ss::create("1.0"); 
+		    base_ss::base_ss_ptr newSS = base_ss::create(); 
 		    spreadsheets.push_back(newSS);
 		    spreadsheets.back()->loadSS("../files/" + fileName);
 		    
@@ -237,9 +237,12 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 		      {
 			std::string cell = it->first;
 			std::string content = it->second;
-			
-			std::string update  = "3\t" + std::to_string(docID) + "\t" + cell + "\t" + content + "\n";
-			send(clientID, -1, update); 
+		
+			if (it->first != "Version:")
+			  {
+			    std::string update  = "3\t" + std::to_string(docID) + "\t" + cell + "\t" + content + "\n";
+			    send(clientID, -1, update); 
+			  }	
 		      }
 		    clientID_toDocID[clientID] = docID;
 		  }	
@@ -247,7 +250,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	    else
 	      {
 		int docID = 0;
-		base_ss::base_ss_ptr newSS = base_ss::create("1.0"); 
+		base_ss::base_ss_ptr newSS = base_ss::create(); 
 		spreadsheets.push_back(newSS);
 		spreadsheets.back()->loadSS("../files/" + fileName);
 		
@@ -260,8 +263,11 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 		    std::string cell = it->first;
 		    std::string content = it->second;
 		    
-		    std::string update  = "3\t" + std::to_string(docID) + "\t" + cell + "\t" + content + "\n";
-		    send(clientID, -1, update); 
+		    if (it->first != "Version:")
+		      {
+			std::string update  = "3\t" + std::to_string(docID) + "\t" + cell + "\t" + content + "\n";
+			send(clientID, -1, update); 
+		      }
 		  }
 		
 		clientID_toDocID[clientID] = docID;
@@ -293,6 +299,12 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	    std::string cell = data[2];
 	    std::string content = data[3];
 
+	    std::string oldCellContent = spreadsheets[docID]->get_contents(cell);
+	    if (oldCellContent.empty())
+	      {
+		oldCellContent = " ";
+	      }
+
 	    std::cout << "Cell: " << cell << std::endl;
 	    std::cout << "content: " << content << std::endl;
 	    
@@ -312,6 +324,8 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	      {
 		std::string validEdit = "4\t" + docIDSend + "\n";
 		std::string cellUpdate = "3\t" + docIDSend + "\t" + cell + "\t" + content + "\n";
+		spreadsheets[docID]->undo.push_back(std::pair<std::string, std::string>(cell, oldCellContent));
+		spreadsheets[docID]->redo.clear();
 		send(clientID, -1, validEdit);
 		send(-1, docID, cellUpdate);
 	      }
@@ -345,8 +359,9 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	    
 	    std::string cell = lastEdit.first;
 	    std::string content = lastEdit.second;
+	    spreadsheets[docID]->redo.push_back(std::pair<std::string, std::string>(cell, content));
 	    
-	    int ret = 0;// spreadsheets[docID]->set_cell(cell, contents);
+	    int ret = spreadsheets[docID]->set_cell(cell, content);
 	    if (ret > 0) //ERROR
 	      {
 		std::string invalidEdit = "5\t" + docIDSend + "\n";
@@ -383,8 +398,9 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	    
 	    std::string cell = lastEdit.first;
 	    std::string content = lastEdit.second;
+	    spreadsheets[docID]->undo.push_back(std::pair<std::string, std::string>(cell, content));
 	    
-	    int ret = 1;//spreadsheets[docID]->set_cell(cell, contents);
+	    int ret = spreadsheets[docID]->set_cell(cell, content);
 	    if (ret > 0) //ERROR
 	      {
 		std::string invalidEdit = "5\t" + docIDSend + "\n";
@@ -419,7 +435,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	size_t pos = fileName.find_last_of(".");
 	if(pos != std::string::npos)
 	  {
-	    hasSS = fileName.substr(pos+1);
+	    hasSS = fileName.substr(pos);
 	    hasSS.erase(std::remove(hasSS.begin(), hasSS.end(), ' '), hasSS.end());
 	    if(hasSS != ".ss")
 	      fileName = fileName + ".ss";

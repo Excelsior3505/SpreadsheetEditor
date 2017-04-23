@@ -1,14 +1,12 @@
 #include "baseSS.h"
 
-base_ss::base_ss_ptr base_ss::create(std::string version)
+base_ss::base_ss_ptr base_ss::create()
 {
-  return base_ss_ptr(new base_ss(version));
+  return base_ss_ptr(new base_ss());
 }
 
-base_ss::base_ss(std::string version)
+base_ss::base_ss()
 {
-  set_cell("Version:", version);
-  set_cell("A1", "66");
 }
 
 base_ss::~base_ss()
