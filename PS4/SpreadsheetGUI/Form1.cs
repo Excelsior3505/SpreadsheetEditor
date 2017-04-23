@@ -116,7 +116,6 @@ namespace SpreadsheetGUI
             InitializeComponent();
             this.Text = "SpreadSheet" + "- " + docName;
             Display();
-            AvailableFiles.Add("Testing");
         }
 
 
@@ -144,9 +143,8 @@ namespace SpreadsheetGUI
                 MessageBox.Show("You do not appear to be connected to the server");
                 AllowReconnect();
             }
-            OpenForm form = new OpenForm(AvailableFiles, ClientSocket);
-            form.Show();
-
+            OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket);
+            fileForm.Show();
         }
 
         /// <summary>
@@ -173,6 +171,7 @@ namespace SpreadsheetGUI
                 MessageBox.Show("You do not appear to be connected to the server");
                 AllowReconnect();
             }
+            
             if (AvailableFiles.Count > 0)
             {
                 OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket);
@@ -181,7 +180,8 @@ namespace SpreadsheetGUI
             else
             {
                 MessageBox.Show("No available files");
-            }            
+            }      
+                 
         }
 
 
@@ -872,55 +872,96 @@ namespace SpreadsheetGUI
             lock (state.sb)
             {
                 data = state.sb.ToString();
+                state.sb.Remove(0, data.Length);
                 // Split at newline
             }
             // Split messages at the newline and then break that up by tabs
             string[] splitOne = Regex.Split(data, @"(?<=[\n])");
-            string[] splitData = splitOne[0].Split('\t');
-            lock (state.sb)
-            {
-                // Prevent buffer overflow
-                state.sb.Remove(0, splitOne[0].Length);
-            }
 
-            // Check the op-codes
-            switch (splitData[0])
+            foreach (string message in splitOne)
             {
-                case "0":
-                    ReceiveFileNames(splitData);
-                    break;
-                case "1":
-                    ReceiveNewID(splitData);
-                    break;
-                case "2":
-                    ReceiveValidOpen(splitData);
-                    break;
-                case "3":
-                    ReceiveCellUpdate(splitData, state);
-                    break;
-                case "4":
-                    ReceiveValidEdit(splitData);
-                    break;
-                case "5":
-                    ReceiveInvalidEdit(splitData);
-                    break;
-                case "6":
-                    ReceieveRename(splitData);
-                    break;
-                case "7":
-                    ReceiveSave(splitData);
-                    break;
-                case "8":
-                    ReceiveValidRename(splitData);
-                    break;
-                case "9":
-                    ReceiveInvalidRename(splitData);
-                    break;
-                case "A":
-                    ReceiveEditLocation(splitData);
-                    break;
-                default:
-                    break;
+                string[] splitData = message.Split('\t');
+                /*
+                lock (state.sb)
+                {
+                    // Prevent buffer overflow
+                    state.sb.Remove(0, splitOne[i].Length);
+                }
+                */
+                // Check the op-codes
+                switch (splitData[0])
+                {
+                    case "0":
+                        ReceiveFileNames(splitData);
+                        break;
+                    case "1":
+                        ReceiveNewID(splitData);
+                        break;
+                    case "2":
+                        ReceiveValidOpen(splitData, state);
+                        break;
+                    case "3":
+
+                        Debug.WriteLine("Received edit");
+                        //int column;
+                        //int tempRow;
+                        try
+                        {
+                            NametoCoor(out col, out row, splitData[2]);
+                            splitData[3] = splitData[3].Substring(0, splitData[3].Length - 1);
+                            //ReceiveCellUpdate(splitData, state);
+                            Debug.WriteLine("Setting: " + splitData[2] + "  " + splitData[3]);
+                            ISet<string> list = sheet.SetContentsOfCell(splitData[2], splitData[3]);
+
+                            // get the value of the named cell
+                            string value = sheet.GetCellValue(splitData[2]).ToString();
+                            // see if it's string or  double or fomula 
+                            string content = PrintableContents(sheet.GetCellContents(splitData[2]));
+                            // set the cell value to the coordinate
+                            spreadsheetPanel1.SetValue(col, row, value);
+                            //this.spreadsheetPanel1.Select();
+                            IsPanleFocused = true;
+                            //Value_textBox.Text = value;
+                            //for each string in the list,
+                            foreach (string s in list)
+                            {
+                                // convert the cell name to the coordinat
+                                NametoCoor(out col, out row, s);
+                                // set the cell value as the specific cell value
+                                spreadsheetPanel1.SetValue(col, row, sheet.GetCellValue(s).ToString());
+                            }
+                        }
+                        catch (Exception s)
+                        {
+                            MessageBox.Show(s.Message);
+                        }
+                        //Updatecell();
+                        //Display();
+                        break;
+                    case "4":
+                        ReceiveValidEdit(splitData);
+                        break;
+                    case "5":
+                        ReceiveInvalidEdit(splitData);
+                        break;
+                    case "6":
+                        ReceieveRename(splitData);
+                        break;
+                    case "7":
+                        ReceiveSave(splitData);
+                        break;
+                    case "8":
+                        ReceiveValidRename(splitData);
+                        break;
+                    case "9":
+                        ReceiveInvalidRename(splitData);
+                        break;
+                    case "A":
+                        ReceiveEditLocation(splitData);
+                        break;
+                    default:
+                        break;
+                }
             }
             SpreadsheetNetworking.GetData(state);
         }
@@ -1006,8 +1047,11 @@ namespace SpreadsheetGUI
         /// <param name="splitData"></param>
         private void ReceiveCellUpdate(string[] splitData, SpreadsheetNetworking.SocketState state)
         {
-            SpreadsheetNetworking.GetData(state);
+            Debug.WriteLine("Adding: " + splitData[2] + "  " + splitData[3]);
+            sheet.SetContentsOfCell(splitData[2], splitData[3]);
             Updatecell();
+            Display();
+            //SpreadsheetNetworking.GetData(state);
         }
 
 
@@ -1015,10 +1059,11 @@ namespace SpreadsheetGUI
         /// Receive the DocID from the server when opening an existing spreadsheet
         /// </summary>
         /// <param name="splitData"></param>
-        private void ReceiveValidOpen(string[] splitData)
+        private void ReceiveValidOpen(string[] splitData, SpreadsheetNetworking.SocketState state)
         {
             DocID = splitData[1];
             DocID = DocID.Substring(0, DocID.Length - 1);
+            // Add code to clear spreadsheet
         }
 
 
@@ -1030,6 +1075,7 @@ namespace SpreadsheetGUI
         {
             DocID = splitData[1];
             DocID = DocID.Substring(0, DocID.Length - 1);
+            // Add code to clear spreadsheet
         }
 
 
@@ -1040,24 +1086,9 @@ namespace SpreadsheetGUI
         /// <returns></returns>
         private string GetDocID(string[] splitData)
         {
-            string id = "-1";
-            if (splitData.Length < 2)
-            {
-                MessageBox.Show("Invalid number of inputs when receiving the DocID");
-            }
-            else
-            {
-                // Should be the second parameter
-                int temp;
-                for (int i = 1; i < splitData.Length; i++)
-                {
-                    if (Int32.TryParse(splitData[i], out temp))
-                    {
-                        id = splitData[i];
-                        break;
-                    }
-                }
-            }
+            string id = "";
+            id = splitData[1];
+            id = DocID.Substring(0, DocID.Length - 1);
             return id;
         }
 
