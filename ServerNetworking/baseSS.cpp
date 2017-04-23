@@ -90,3 +90,13 @@ void base_ss::saveSS(std::string saveName)
     out << spreadsheet;
   }
 }
+
+void base_ss::rename(std::string fileName)
+{
+  std::string before = "../files/" + name;
+  std::string after = "../files/" + fileName;
+  const char* beforeArr = before.c_str();
+  const char* afterArr = after.c_str();
+  std::rename(beforeArr, afterArr);
+  name = fileName;
+}

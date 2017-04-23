@@ -29,6 +29,7 @@ base_ss(std::string version);
  int set_cell(std::string key, std::string content);
  void loadSS(std::string fileName);
  void saveSS(std::string saveName);
+ void rename(std::string fileName);
  std::string name;
  std::vector< std::pair< std::string, std::string> > undo;
  std::vector< std::pair< std::string, std::string> > redo;

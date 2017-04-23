@@ -151,6 +151,17 @@ void Server::processMessage(int clientID, std::string messageToProcess)
       {
 	//Extract file name from message
 	std::string fileName = data[1];
+	std::string hasSS = "";
+
+	size_t pos = fileName.find_last_of(".");
+	if(pos != std::string::npos)
+	  {
+	    hasSS = fileName.substr(pos+1);
+	    if(hasSS != ".ss")
+	      fileName = fileName + ".ss";
+	  }
+	else
+	  fileName = fileName + ".ss";
 	
 	//Check if name exists
 	if(boost::filesystem::exists("../files/" + fileName))
@@ -179,6 +190,17 @@ void Server::processMessage(int clientID, std::string messageToProcess)
       {
 	//Extract file name from message
 	std::string fileName = data[1];
+	std::string hasSS = "";
+
+	size_t pos = fileName.find_last_of(".");
+	if(pos != std::string::npos)
+	  {
+	    hasSS = fileName.substr(pos+1);
+	    if(hasSS != ".ss")
+	      fileName = fileName + ".ss";
+	  }
+	else
+	  fileName = fileName + ".ss";
 	
 	//Check if name exists
 	if(boost::filesystem::exists("../files/" + fileName))
@@ -382,22 +404,39 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	int docID = clientID_toDocID[clientID];
 	
 	//Save the current state of the document the client is working on
-	spreadsheets[docID]->saveSS("../files/" + spreadsheets[docID]->name);
+	spreadsheets[docID]->saveSS("../files/" + spreadsheets[docID]->name + ".ss");
 	break;
       }
 
     case 7:    //Rename
       {
 	//Extract new filename from message
-	std::string filename = data[1];
+	std::string fileName = data[1];
+	std::string hasSS = "";
+
+	size_t pos = fileName.find_last_of(".");
+	if(pos != std::string::npos)
+	  {
+	    hasSS = fileName.substr(pos+1);
+	    if(hasSS != ".ss")
+	      fileName = fileName + ".ss";
+	  }
+	else
+	  fileName = fileName + ".ss";
+
 	int docID = clientID_toDocID[clientID];
-	
+        
 	//If new filename is already in use on server:
-	//    send packet with opcode 9 to client indicating invalid name
+        if(boost::filesystem::exists("../files/" + fileName + ".ss"))
+	  {
+	    //send packet with opcode 9 to client indicating invalid name
+	    break;
+	  }
 	//If new filename is valid:
 	//    send packet with opcode 8 to client indicating rename accepted
 	//    send packet with opcode 6 to all clients working on doc with to indicate rename occurred
 	//    change name of document
+	spreadsheets[docID]->rename(fileName);
 	break;
       }
     case 8: //Edit Location
