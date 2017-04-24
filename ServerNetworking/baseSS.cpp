@@ -53,7 +53,7 @@ int base_ss::set_cell(std::string key, std::string content)
 		            c = content[i];
 		          }
 	      
-	          //std::string dependancy(dep.begin(), dep.end());
+	          std::string dependancy(dep.begin(), dep.end());
 	         // std::cout << "Dep: " <<  dependancy << std::endl;
 	          if(dep_graph.add_dependency(key, dependancy) == 1)
 		          {
@@ -67,7 +67,12 @@ int base_ss::set_cell(std::string key, std::string content)
           spreadsheet.insert( std::pair<std::string, std::string> (key, ""));
         }
       spreadsheet[key] = content;
-      
+      if(check_dependency(key)==1)
+      {
+        dep_graph.replace_dependents(key,old_dependents);
+        spreadsheet[key]=old_content;
+        return 1;
+      }
       return 0;
     }
   else
@@ -80,6 +85,36 @@ int base_ss::set_cell(std::string key, std::string content)
     }
   spreadsheet[key] = content;
   return 0;
+}
+
+int base_ss::check_dependency(std::string key)
+{
+ 
+  std::set<std::string> visited;
+  int code;
+  if (visited.find(key)==visited.end())
+  {
+    code+=visit(key,key,visited);
+  }
+  return code;
+}
+int base_ss::visit(std::string start, std::string name, std::set<std::string>visited)
+{
+  visited.insert(name);
+  std::set<std::string> dependees=dep_graph.get_dependees(name);
+  std::set<std::string> ::iterator it;
+  for(it=dependees.begin(); it!=dependees.end();it++)
+  {
+    if(*it==start)
+    {
+      return 1;
+    }
+    if(visited.find(*it)==visited.end())
+    {
+    visit(start,*it,visited);
+    }
+  }
+return 0;
 }
 
 void base_ss::loadSS(std::string fileName)

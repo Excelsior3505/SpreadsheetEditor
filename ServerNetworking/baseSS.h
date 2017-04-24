@@ -35,6 +35,8 @@ base_ss();
  std::vector< std::pair< std::string, std::string> > undo;
  std::vector< std::pair< std::string, std::string> > redo;
  cs3505::dpgraph dep_graph;
+ int check_dependency(std::string key);
+ int visit(std::string start, std::string name, std::set<std::string>visited);
 };
 
 #endif
