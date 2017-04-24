@@ -17,6 +17,7 @@ namespace SpreadsheetGUI
         public Socket clientSocket;
         public List<string> files;
         int Opcode = -1;
+        string DocID;
 
         /// <summary>
         /// Opens a form that displays the available files to the user,
@@ -24,12 +25,13 @@ namespace SpreadsheetGUI
         /// </summary>
         /// <param name="fileList"></param>
         /// <param name="client"></param>
-        public OpenForm(List<string> fileList, Socket client, int opCode)
+        public OpenForm(List<string> fileList, Socket client, int opCode, string docid)
         {
             clientSocket = client;
             files = fileList;
             InitializeComponent();
             Opcode = opCode;
+            DocID = docid;
             fileNameBox.Text = "(filename)";
             if (fileList.Count > 0)
             {
@@ -67,12 +69,20 @@ namespace SpreadsheetGUI
             }
             if (files.Contains(fileNameBox.Text))
             {
+                //SpreadsheetNetworking.Send(clientSocket, DocID, 6);
                 SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, Opcode);
+                Close();
+            }
+            else if (Opcode == 7)
+            {
+                string message = DocID + "\t" + fileNameBox.Text;
+                SpreadsheetNetworking.Send(clientSocket, message, Opcode);
+                SpreadsheetNetworking.Send(clientSocket, DocID, 6);
                 Close();
             }
             else
             {
-                
+                //SpreadsheetNetworking.Send(clientSocket, DocID, 6);
                 SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, Opcode);
                 Close();
             }
@@ -102,6 +112,7 @@ namespace SpreadsheetGUI
             if (fileListBox.SelectedItem != null)
             {
                 fileNameBox.Text = fileListBox.SelectedItem.ToString();
+                //SpreadsheetNetworking.Send(clientSocket, DocID, 6);
                 SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, Opcode);
                 Close();
             }

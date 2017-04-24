@@ -144,7 +144,7 @@ namespace SpreadsheetGUI
                 AllowReconnect();
             }
             System.Threading.Thread.Sleep(2000);
-            OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket, 1);
+            OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket, 1, DocID);
             fileForm.Show();
         }
 
@@ -176,7 +176,7 @@ namespace SpreadsheetGUI
             System.Threading.Thread.Sleep(2000);
             if (AvailableFiles.Count > 0)
             {
-                OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket, 2);
+                OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket, 2, DocID);
                 fileForm.Show();
             }
             else
@@ -770,9 +770,6 @@ namespace SpreadsheetGUI
             // Attempt to create a socket with the server
             if (connect)
             {
-                // Wait 30 seconds, attempting connection every 5 seconds
-                while (timer < 6 || !ClientSocket.Connected)
-                {
                     try
                     {
                         ipBox.Enabled = false;
@@ -782,14 +779,11 @@ namespace SpreadsheetGUI
                     }
                     catch (Exception)
                     {
-                        System.Threading.Thread.Sleep(5000);
-                        timer++;
-                    }
-                }
-                if (!ClientSocket.Connected)
-                {
-                    MessageBox.Show("Failed to connect to server, please check IP and try again");
-                    AllowReconnect();
+                        if (!ClientSocket.Connected)
+                        {
+                            MessageBox.Show("Failed to connect to server, please check IP and try again");
+                            AllowReconnect();
+                        }
                 }
             }
         }
@@ -913,10 +907,6 @@ namespace SpreadsheetGUI
                         ReceiveValidOpen(splitData, state);
                         break;
                     case "3":
-
-                        Debug.WriteLine("Received edit");
-                        //int column;
-                        //int tempRow;
                         try
                         {
                             NametoCoor(out col, out row, splitData[2]);
@@ -1074,6 +1064,7 @@ namespace SpreadsheetGUI
             DocID = splitData[1];
             DocID = DocID.Substring(0, DocID.Length - 1);
             // Add code to clear spreadsheet
+            ClearSpreadsheet();
         }
 
 
@@ -1086,6 +1077,7 @@ namespace SpreadsheetGUI
             DocID = splitData[1];
             DocID = DocID.Substring(0, DocID.Length - 1);
             // Add code to clear spreadsheet
+            ClearSpreadsheet();
         }
 
 
@@ -1173,13 +1165,36 @@ namespace SpreadsheetGUI
             if (DocID != "-1" && ClientSocket.Connected)
             {
                 
-                OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket, 7);
-                fileForm.Show();
-                saveToolStripMenuItem_Click(sender, e);
+                try
+                {
+                    OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket, 7, DocID);
+                    fileForm.Show();
+                }
+                catch (Exception)
+                {
+                    MessageBox.Show("Please reconnect to server");
+                }
             }
             else
             {
                 MessageBox.Show("You must first open a document");
+            }
+        }
+
+
+        /// <summary>
+        /// Clears all cells in the spreadsheet
+        /// </summary>
+        private void ClearSpreadsheet()
+        {
+            IEnumerable<string> cells = sheet.GetNamesOfAllNonemptyCells();
+            IEnumerable<string> copy = cells;
+            foreach (string s in copy)
+            {
+                sheet.SetContentsOfCell(s, "");
+                NametoCoor(out col, out row, s);
+                spreadsheetPanel1.SetValue(col, row, "");
+                IsPanleFocused = true;
             }
         }
     }
