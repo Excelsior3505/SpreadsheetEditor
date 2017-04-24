@@ -87,7 +87,6 @@ namespace SS
             // Arrange for the drawing panel to be notified when it needs to scroll itself.
             hScroll.Scroll += drawingPanel.HandleHScroll;
             vScroll.Scroll += drawingPanel.HandleVScroll;
-
         }
 
 
@@ -391,6 +390,7 @@ namespace SS
                     DrawRowLabel(e.Graphics, y, f);
                 }
 
+
                 // Highlight the selection, if it is visible
                 if ((_selectedCol - _firstColumn >= 0) && (_selectedRow - _firstRow >= 0))
                 {
@@ -402,6 +402,7 @@ namespace SS
                                       DATA_ROW_HEIGHT - 2));
                 }
                 
+
                 // Draw the text
                 foreach (KeyValuePair<Address, String> address in _values)
                 {
