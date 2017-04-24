@@ -93,6 +93,10 @@ int dpgraph::add_dependency(std::string s, std::string t)
     {
         return 1; //circular depency check
     }
+ if(s==t)
+    {
+        return 1; //circular depency check
+    }
     if(keys.find(s)!=keys.end()&&keys[s].find(t)==keys[s].end())
     {
         keys[s].insert(t);

@@ -55,12 +55,12 @@ int base_ss::set_cell(std::string key, std::string content)
 	      
 	          std::string dependancy(dep.begin(), dep.end());
 	         // std::cout << "Dep: " <<  dependancy << std::endl;
-	         // if(dep_graph.add_dependency(key, dependency) == 1)
-		  //       {
-		  //        return 1;
-		  //      } 
+		  if(dep_graph.add_dependency(key, dependancy) == 1)
+		    {
+		      return 1;
+		    } 
 	        } 
-
+		
 	      }
       if(spreadsheet.find(key) == spreadsheet.end())
         {
