@@ -401,14 +401,16 @@ namespace SS
                                       DATA_COL_WIDTH - 2,
                                       DATA_ROW_HEIGHT - 2));
                 }
-                
+
 
                 // Draw the text
-                foreach (KeyValuePair<Address, String> address in _values)
+                List<Address> keys = new List<Address>(_values.Keys);                    ;
+                // foreach (KeyValuePair<Address, String> address in _values)
+                foreach(Address k in keys)
                 {
-                    String text = address.Value;
-                    int x = address.Key.Col - _firstColumn;
-                    int y = address.Key.Row - _firstRow;
+                    String text = _values[k];
+                    int x = k.Col - _firstColumn;
+                    int y = k.Row - _firstRow;
                     float height = e.Graphics.MeasureString(text, regularFont).Height;
                     float width = e.Graphics.MeasureString(text, regularFont).Width;
                     if (x >= 0 && y >= 0)
