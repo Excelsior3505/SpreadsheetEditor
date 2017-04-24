@@ -74,6 +74,7 @@ namespace SpreadsheetGUI
         string UserName = "";
         private List<string> AvailableFiles = new List<string>();
         //Timer timer = new Timer()
+        private static object thisLock = new object();
 
 
         /// <summary>
@@ -742,12 +743,12 @@ namespace SpreadsheetGUI
         private void connectButton_Click(object sender, EventArgs e)
         {
             // Client already is connected to server, clicking again will open another instance on the server
-            /*
+            
             if (CurrentlyConnected)
             {               
                 return;
             }
-            */
+            
             // Simple checks for input, could be improved upon later
             // Could also be a popup
             bool connect = true;
@@ -882,85 +883,98 @@ namespace SpreadsheetGUI
                 // Split at newline
             }
             // Split messages at the newline and then break that up by tabs
-            string[] splitOne = Regex.Split(data, @"(?<=[\n])");
 
-            foreach (string message in splitOne)
+            lock (thisLock)
             {
-                string[] splitData = message.Split('\t');
-                /*
-                lock (state.sb)
+                string[] splitOne = Regex.Split(data, @"(?<=[\n])");
+                foreach (string message in splitOne)
                 {
-                    // Prevent buffer overflow
-                    state.sb.Remove(0, splitOne[i].Length);
-                }
-                */
-                // Check the op-codes
-                switch (splitData[0])
-                {
-                    case "0":
-                        ReceiveFileNames(splitData);
-                        break;
-                    case "1":
-                        ReceiveNewID(splitData);
-                        break;
-                    case "2":
-                        ReceiveValidOpen(splitData, state);
-                        break;
-                    case "3":
-                        try
-                        {
-                            NametoCoor(out col, out row, splitData[2]);
-                            splitData[3] = splitData[3].Substring(0, splitData[3].Length - 1);
-                            //ReceiveCellUpdate(splitData, state);
-                            Debug.WriteLine("Setting: " + splitData[2] + "  " + splitData[3]);
-                            ISet<string> list = sheet.SetContentsOfCell(splitData[2], splitData[3]);
-
-                            // get the value of the named cell
-                            string value = sheet.GetCellValue(splitData[2]).ToString();
-                            // see if it's string or  double or fomula 
-                            string content = PrintableContents(sheet.GetCellContents(splitData[2]));
-                            // set the cell value to the coordinate
-                            spreadsheetPanel1.SetValue(col, row, value);
-                            //this.spreadsheetPanel1.Select();
-                            IsPanleFocused = true;
-                            //Value_textBox.Text = value;
-                            //for each string in the list,
-                            foreach (string s in list)
+                    string[] splitData = message.Split('\t');
+                    //splitData[splitData.Length - 1] = splitData[splitData.Length - 1].Substring(0, splitData.Length - 1);
+                    /*
+                    lock (state.sb)
+                    {
+                        // Prevent buffer overflow
+                        state.sb.Remove(0, splitOne[i].Length);
+                    }
+                    */
+                    // Check the op-codes
+                    switch (splitData[0])
+                    {
+                        case "0":
+                            ReceiveFileNames(splitData);
+                            break;
+                        case "1":
+                            ReceiveNewID(splitData);
+                            break;
+                        case "2":
+                            ReceiveValidOpen(splitData, state);
+                            break;
+                        case "3":
+                            try
                             {
-                                // convert the cell name to the coordinat
-                                NametoCoor(out col, out row, s);
-                                // set the cell value as the specific cell value
-                                spreadsheetPanel1.SetValue(col, row, sheet.GetCellValue(s).ToString());
+                                int c, r;
+                                NametoCoor(out c, out r, splitData[2]);
+                                splitData[3] = splitData[3].Substring(0, splitData[3].Length - 1);
+                                //ReceiveCellUpdate(splitData, state);
+                                Debug.WriteLine("Setting: " + splitData[2] + "  " + splitData[3]);
+                                ISet<string> list = sheet.SetContentsOfCell(splitData[2], splitData[3]);
+                                ISet<string> copy = list;
+
+                                // get the value of the named cell
+                                lock (thisLock)
+                                {
+                                    string value = sheet.GetCellValue(splitData[2]).ToString();
+                                    // see if it's string or  double or fomula 
+                                    string content = PrintableContents(sheet.GetCellContents(splitData[2]));
+                                    // set the cell value to the coordinate
+                                    spreadsheetPanel1.SetValue(c, r, value);
+                                    //this.spreadsheetPanel1.Select();
+                                    IsPanleFocused = true;
+                                    //Value_textBox.Text = value;
+                                    //for each string in the list,
+                                    lock (thisLock)
+                                    {
+                                        foreach (string s in copy)
+                                        {
+                                            int co, ro;
+                                            // convert the cell name to the coordinat
+                                            NametoCoor(out co, out ro, s);
+                                            // set the cell value as the specific cell value
+                                            spreadsheetPanel1.SetValue(co, ro, sheet.GetCellValue(s).ToString());
+                                        }
+                                    }
+                                }
                             }
-                        }
-                        catch (Exception s)
-                        {
-                            MessageBox.Show(s.Message);
-                        }
-                        break;
-                    case "4":
-                        ReceiveValidEdit(splitData);
-                        break;
-                    case "5":
-                        ReceiveInvalidEdit(splitData);
-                        break;
-                    case "6":
-                        ReceieveRename(splitData);
-                        break;
-                    case "7":
-                        ReceiveSave(splitData);
-                        break;
-                    case "8":
-                        ReceiveValidRename(splitData);
-                        break;
-                    case "9":
-                        ReceiveInvalidRename(splitData);
-                        break;
-                    case "A":
-                        ReceiveEditLocation(splitData);
-                        break;
-                    default:
-                        break;
+                            catch (Exception s)
+                            {
+                                MessageBox.Show("This is an invalid cell name");
+                            }
+                            break;
+                        case "4":
+                            ReceiveValidEdit(splitData);
+                            break;
+                        case "5":
+                            ReceiveInvalidEdit(splitData);
+                            break;
+                        case "6":
+                            ReceieveRename(splitData);
+                            break;
+                        case "7":
+                            ReceiveSave(splitData);
+                            break;
+                        case "8":
+                            ReceiveValidRename(splitData);
+                            break;
+                        case "9":
+                            ReceiveInvalidRename(splitData);
+                            break;
+                        case "A":
+                            ReceiveEditLocation(splitData);
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
             SpreadsheetNetworking.GetData(state);
@@ -1065,6 +1079,7 @@ namespace SpreadsheetGUI
             DocID = DocID.Substring(0, DocID.Length - 1);
             // Add code to clear spreadsheet
             ClearSpreadsheet();
+            System.Threading.Thread.Sleep(5000);
         }
 
 
