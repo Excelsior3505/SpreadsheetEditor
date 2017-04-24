@@ -14,6 +14,7 @@
 #include <boost/filesystem.hpp>
 #undef BOOST_NO_CXX11_SCOPED_ENUMS
 #include <thread>
+#include <chrono>
 #include "Server.h"
 #include "ClientConnection.h"
 #include "baseSS.h"
@@ -214,6 +215,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	    if(spreadsheets.size() > 0)
 	      {
 		bool found = false;
+		fileName = fileName.substr(0, pos);
 		for(std::vector<base_ss_ptr>::iterator it = spreadsheets.begin(); it != spreadsheets.end(); it++)
 		  {
 		    if((*it)->name == fileName)
@@ -226,13 +228,14 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 			send(clientID, -1, validOpen);
 			
 			std::map<std::string, std::string>::iterator it;
-			for (it = spreadsheets.back()->spreadsheet.begin(); it != spreadsheets.back()->spreadsheet.end(); ++it)
+			for (it = spreadsheets[docID]->spreadsheet.begin(); it != spreadsheets[docID]->spreadsheet.end(); ++it)
 			  {
 			    std::string cell = it->first;
 			    std::string content = it->second;
 			    
 			    if (it->first != "Version:")
 			      {
+				//std::this_thread::sleep_for(std::chrono::milliseconds(500));
 				std::string update  = "3\t" + std::to_string(docID) + "\t" + cell + "\t" + content + "\n";
 				send(clientID, -1, update); 
 			      }	
@@ -247,7 +250,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 		    int docID = spreadsheets.size();
 		    base_ss::base_ss_ptr newSS = base_ss::create(); 
 		    spreadsheets.push_back(newSS);
-		    spreadsheets.back()->loadSS("../files/" + fileName);
+		    spreadsheets.back()->loadSS("../files/" + fileName + ".ss");
 		    fileName = fileName.substr(0, pos);
 		    spreadsheets.back()->name = fileName;
 		    std::string validOpen  = "2\t" + std::to_string(docID) + "\n";
@@ -261,6 +264,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 		
 			if (it->first != "Version:")
 			  {
+			    //std::this_thread::sleep_for(std::chrono::milliseconds(750));
 			    std::string update  = "3\t" + std::to_string(docID) + "\t" + cell + "\t" + content + "\n";
 			    send(clientID, -1, update); 
 			  }	
@@ -287,6 +291,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 		    
 		    if (it->first != "Version:")
 		      {
+			//std::this_thread::sleep_for(std::chrono::milliseconds(500));
 			std::string update  = "3\t" + std::to_string(docID) + "\t" + cell + "\t" + content + "\n";
 			send(clientID, -1, update); 
 		      }
@@ -294,7 +299,6 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 		
 		clientID_toDocID[clientID] = docID;
 	      }
-	    //If it does, send docID
 	  }
 	else
 	  {
@@ -313,10 +317,12 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	    std::istringstream iss(data[1]);
 	    int docID;
 	    iss >> docID;
-	    if (docID == -1)
+	    
+	    if (docID < 0 || docID >= spreadsheets.size())
 	      {
 		break;
 	      }
+
 	    std::string docIDSend = data[1];
 	    std::string cell = data[2];
 	    std::string content = data[3];
@@ -344,6 +350,9 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	      }
 	    else //Edit is valid
 	      {
+		std::string name = "../files/" + spreadsheets[docID]->name + ".ss";
+		spreadsheets[docID]->saveSS(name);
+
 		std::string validEdit = "4\t" + docIDSend + "\n";
 		std::string cellUpdate = "3\t" + docIDSend + "\t" + cell + "\t" + content + "\n";
 		spreadsheets[docID]->undo.push_back(std::pair<std::string, std::string>(cell, oldCellContent));
@@ -374,6 +383,11 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	int docID;
 	is >> docID;
 	
+	if (docID < 0 || docID >= spreadsheets.size())
+	  {
+	    break;
+	  }
+
 	if (!spreadsheets[docID]->undo.empty())
 	  {
 	    std::pair<std::string, std::string> lastEdit = spreadsheets[docID]->undo.back();
@@ -391,6 +405,9 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	      }
 	    else //Edit is valid
 	      {
+		std::string name = "../files/" + spreadsheets[docID]->name + ".ss";
+		spreadsheets[docID]->saveSS(name);
+		
 		std::string validEdit = "4\t" + docIDSend + "\n";
 		std::string cellUpdate = "3\t" + docIDSend + "\t" + cell + "\t" + content + "\n";
 		send(clientID, -1, validEdit);
@@ -413,6 +430,12 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	int docID;
 	iss1 >> docID;
 	
+	if (docID < 0 || docID >= spreadsheets.size())
+	  {
+	    break;
+	  }
+
+
 	if (!spreadsheets[docID]->redo.empty())
 	  {
 	    std::pair<std::string, std::string> lastEdit = spreadsheets[docID]->redo.back();
@@ -430,6 +453,9 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	      }
 	    else //Edit is valid
 	      {
+		std::string name = "../files/" + spreadsheets[docID]->name + ".ss";
+		spreadsheets[docID]->saveSS(name);
+
 		std::string validEdit = "4\t" + docIDSend + "\n";
 		std::string cellUpdate = "3\t" + docIDSend + "\t" + cell + "\t" + content + "\n";
 		send(clientID, -1, validEdit);
@@ -442,10 +468,12 @@ void Server::processMessage(int clientID, std::string messageToProcess)
     case 6:    //Save
       {
 	int docID = clientID_toDocID[clientID];
-	
-	//Save the current state of the document the client is working on
-	std::string name = "../files/" + spreadsheets[docID]->name + ".ss";
-	spreadsheets[docID]->saveSS(name);
+	if (docID >= 0 && docID < spreadsheets.size())
+	  {
+	    //Save the current state of the document the client is working on
+	    std::string name = "../files/" + spreadsheets[docID]->name + ".ss";
+	    spreadsheets[docID]->saveSS(name);
+	  }
 	break;
       }
 
@@ -469,6 +497,11 @@ void Server::processMessage(int clientID, std::string messageToProcess)
         std::istringstream iss2(data[1]);
 	int docID;
 	iss2 >> docID;
+
+	if (docID < 0)
+	  {
+	    break;
+	  }
 
 	std::string oldFilename = "../files/" + spreadsheets[docID]->name + ".ss";
         
