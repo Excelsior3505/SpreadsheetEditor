@@ -151,9 +151,8 @@ void Server::processMessage(int clientID, std::string messageToProcess)
       {
 	//Extract file name from message
 	std::string fileName = data[1];
-	/*
+	
 	std::string hasSS = "";
-
 	size_t pos = fileName.find_last_of(".");
 	if(pos != std::string::npos)
 	  {
@@ -164,7 +163,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	  }
 	else
 	  fileName = fileName + ".ss";
-	*/
+	
 	//Check if name exists
 	if(boost::filesystem::exists("../files/" + fileName))
 	  {
@@ -177,7 +176,8 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	    int docID = spreadsheets.size();
 	    clientID_toDocID[clientID] = docID;
 	    //create new spreadsheet object
-	    base_ss::base_ss_ptr newSS = base_ss::create(); 
+	    base_ss::base_ss_ptr newSS = base_ss::create();
+	    fileName = fileName.substr(0, pos);
 	    newSS->name = fileName;
 	    spreadsheets.push_back(newSS);
 	    std::string docIDSend = std::to_string(docID);
@@ -195,7 +195,6 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	
 	std::string hasSS = "";
 	size_t pos = fileName.find_last_of(".");
-	fileName = fileName.substr(0, pos);
 	if(pos != std::string::npos)
 	  {
 	    hasSS = fileName.substr(pos);
@@ -249,6 +248,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 		    base_ss::base_ss_ptr newSS = base_ss::create(); 
 		    spreadsheets.push_back(newSS);
 		    spreadsheets.back()->loadSS("../files/" + fileName);
+		    fileName = fileName.substr(0, pos);
 		    spreadsheets.back()->name = fileName;
 		    std::string validOpen  = "2\t" + std::to_string(docID) + "\n";
 		    send(clientID, -1, validOpen);
@@ -274,6 +274,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 		base_ss::base_ss_ptr newSS = base_ss::create(); 
 		spreadsheets.push_back(newSS);
 		spreadsheets.back()->loadSS("../files/" + fileName);
+		fileName = fileName.substr(0, pos);
 		spreadsheets.back()->name = fileName;
 		std::string validOpen  = "2\t" + std::to_string(docID) + "\n";
 		send(clientID, -1, validOpen);
@@ -451,7 +452,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
     case 7:    //Rename
       {
 	//Extract new filename from message
-	std::string fileName = data[1];
+	std::string fileName = data[2];
 	//std::string hasSS = "";
 	/*
 	size_t pos = fileName.find_last_of(".");
@@ -468,6 +469,8 @@ void Server::processMessage(int clientID, std::string messageToProcess)
         std::istringstream iss2(data[1]);
 	int docID;
 	iss2 >> docID;
+
+	std::string oldFilename = "../files/" + spreadsheets[docID]->name + ".ss";
         
 	//If new filename is already in use on server:
         if(boost::filesystem::exists("../files/" + fileName + ".ss"))
@@ -481,6 +484,9 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	//    send packet with opcode 8 to client indicating rename accepted
 	//    send packet with opcode 6 to all clients working on doc with to indicate rename occurred
 	//    change name of document
+	boost::filesystem::remove(oldFilename);
+	spreadsheets[docID]->saveSS("../files/" + fileName + ".ss");
+
 	std::string validName = "8\t" + std::to_string(docID) + "\n";
 	std::string rename = "6\t" + std::to_string(docID) + "\t" + fileName + "\n";
 	send(clientID, -1, validName);
