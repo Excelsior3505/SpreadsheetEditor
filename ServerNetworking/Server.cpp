@@ -351,7 +351,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	      }
 	    else //Edit is valid
 	      {
-		std::string name = "../files/" + spreadsheets[docID]->name + ".ss";
+		std::string name = "../files/" + spreadsheets[docID]->name;
 		spreadsheets[docID]->saveSS(name);
 
 		std::string validEdit = "4\t" + docIDSend + "\n";
@@ -407,7 +407,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	      }
 	    else //Edit is valid
 	      {
-		std::string name = "../files/" + spreadsheets[docID]->name + ".ss";
+		std::string name = "../files/" + spreadsheets[docID]->name;
 		spreadsheets[docID]->saveSS(name);
 		
 		std::string validEdit = "4\t" + docIDSend + "\n";
@@ -455,7 +455,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	      }
 	    else //Edit is valid
 	      {
-		std::string name = "../files/" + spreadsheets[docID]->name + ".ss";
+		std::string name = "../files/" + spreadsheets[docID]->name;
 		spreadsheets[docID]->saveSS(name);
 
 		std::string validEdit = "4\t" + docIDSend + "\n";
@@ -473,7 +473,7 @@ void Server::processMessage(int clientID, std::string messageToProcess)
 	if (docID >= 0 && docID < spreadsheets.size())
 	  {
 	    //Save the current state of the document the client is working on
-	    std::string name = "../files/" + spreadsheets[docID]->name + ".ss";
+	    std::string name = "../files/" + spreadsheets[docID]->name;
 	    spreadsheets[docID]->saveSS(name);
 	  }
 	break;

@@ -158,14 +158,12 @@ void base_ss::saveSS(std::string saveName)
     }
   else
     saveName = saveName + ".ss";
-  if(boost::filesystem::exists("../files/" + saveName))
-    {
-      std::ofstream saving(saveName);
-      {
-	boost::archive::text_oarchive out(saving);
-	out << spreadsheet;
-      }
-    }
+  
+  std::ofstream saving(saveName);
+  {
+    boost::archive::text_oarchive out(saving);
+    out << spreadsheet;
+  }
 }
 
 void base_ss::rename(std::string fileName)
