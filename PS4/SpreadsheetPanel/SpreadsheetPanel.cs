@@ -8,7 +8,7 @@ using System.Data;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
-
+using System.Diagnostics;
 
 namespace SS
 {
@@ -111,7 +111,10 @@ namespace SS
         
         public bool SetValue(int col, int row, string value)
         {
-            return drawingPanel.SetValue(col, row, value);
+            lock (drawingPanel)
+            {
+                return drawingPanel.SetValue(col, row, value);
+            }
         }
 
 
@@ -266,19 +269,22 @@ namespace SS
 
             public bool SetValue(int col, int row, string c)
             {
-                if (InvalidAddress(col, row))
+                lock (this)
                 {
-                    return false;
-                }
+                    if (InvalidAddress(col, row))
+                    {
+                        return false;
+                    }
 
-                Address a = new Address(col, row);
-                if (c == null || c == "")
-                {
-                    _values.Remove(a);
-                }
-                else
-                {
-                    _values[a] = c;
+                    Address a = new Address(col, row);
+                    if (c == null || c == "")
+                    {
+                        _values.Remove(a);
+                    }
+                    else
+                    {
+                        _values[a] = c;
+                    }
                 }
                 Invalidate();
                 return true;
@@ -402,32 +408,43 @@ namespace SS
                                       DATA_ROW_HEIGHT - 2));
                 }
 
-
-                // Draw the text
-                List<Address> keys = new List<Address>(_values.Keys);                    ;
-                // foreach (KeyValuePair<Address, String> address in _values)
-                foreach(Address k in keys)
+                try
                 {
-                    String text = _values[k];
-                    int x = k.Col - _firstColumn;
-                    int y = k.Row - _firstRow;
-                    float height = e.Graphics.MeasureString(text, regularFont).Height;
-                    float width = e.Graphics.MeasureString(text, regularFont).Width;
-                    if (x >= 0 && y >= 0)
+                    // Draw the text
+                    lock (_values)
                     {
-                        Region cellClip = new Region(new Rectangle(LABEL_COL_WIDTH + x * DATA_COL_WIDTH + PADDING,
-                                                                   LABEL_ROW_HEIGHT + y * DATA_ROW_HEIGHT,
-                                                                   DATA_COL_WIDTH - 2*PADDING,
-                                                                   DATA_ROW_HEIGHT));
-                        cellClip.Intersect(clip);
-                        e.Graphics.Clip = cellClip;
-                        e.Graphics.DrawString(
-                            text,
-                            regularFont,
-                            brush,
-                            LABEL_COL_WIDTH + x * DATA_COL_WIDTH + PADDING,
-                            LABEL_ROW_HEIGHT + y * DATA_ROW_HEIGHT + (DATA_ROW_HEIGHT - height) / 2);
+                        List<Address> keys = new List<Address>(_values.Keys); ;
+                        // foreach (KeyValuePair<Address, String> address in _values)
+                        for (int j = 0; j < keys.Count; j++)
+                        {
+                            Address k = keys.ElementAt(j);
+
+                            String text = _values[k];
+                            int x = k.Col - _firstColumn;
+                            int y = k.Row - _firstRow;
+                            float height = e.Graphics.MeasureString(text, regularFont).Height;
+                            float width = e.Graphics.MeasureString(text, regularFont).Width;
+                            if (x >= 0 && y >= 0)
+                            {
+                                Region cellClip = new Region(new Rectangle(LABEL_COL_WIDTH + x * DATA_COL_WIDTH + PADDING,
+                                                                           LABEL_ROW_HEIGHT + y * DATA_ROW_HEIGHT,
+                                                                           DATA_COL_WIDTH - 2 * PADDING,
+                                                                           DATA_ROW_HEIGHT));
+                                cellClip.Intersect(clip);
+                                e.Graphics.Clip = cellClip;
+                                e.Graphics.DrawString(
+                                    text,
+                                    regularFont,
+                                    brush,
+                                    LABEL_COL_WIDTH + x * DATA_COL_WIDTH + PADDING,
+                                    LABEL_ROW_HEIGHT + y * DATA_ROW_HEIGHT + (DATA_ROW_HEIGHT - height) / 2);
+                            }
+                        }
                     }
+                }
+                catch(System.InvalidOperationException)
+                {
+                    Debug.WriteLine("Kill me");
                 }
 
 

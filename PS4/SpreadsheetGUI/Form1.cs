@@ -879,17 +879,24 @@ namespace SpreadsheetGUI
             lock (state.sb)
             {
                 data = state.sb.ToString();
+                //MessageBox.Show("Data: " + data);
                 state.sb.Remove(0, data.Length);
                 // Split at newline
             }
             // Split messages at the newline and then break that up by tabs
 
-            lock (thisLock)
+            string[] splitOne = Regex.Split(data, @"(?<=[\n])");
+            //MessageBox.Show("Message length: " + splitOne.Length.ToString());   
+            System.Threading.Thread.Sleep(100); 
+            foreach (string message in splitOne)
             {
-                string[] splitOne = Regex.Split(data, @"(?<=[\n])");
-                foreach (string message in splitOne)
+                if (message == "\n" || message.Length < 1 || message == "\t")
                 {
-                    string[] splitData = message.Split('\t');
+                    continue;
+                }
+                string[] splitData = message.Split('\t');
+                //MessageBox.Show(message);
+                System.Threading.Thread.Sleep(50);
                     //splitData[splitData.Length - 1] = splitData[splitData.Length - 1].Substring(0, splitData.Length - 1);
                     /*
                     lock (state.sb)
@@ -899,52 +906,56 @@ namespace SpreadsheetGUI
                     }
                     */
                     // Check the op-codes
-                    switch (splitData[0])
-                    {
-                        case "0":
-                            ReceiveFileNames(splitData);
-                            break;
-                        case "1":
-                            ReceiveNewID(splitData);
-                            break;
-                        case "2":
-                            ReceiveValidOpen(splitData, state);
-                            break;
-                        case "3":
-                            try
-                            {
-                                int c, r;
-                                NametoCoor(out c, out r, splitData[2]);
-                                splitData[3] = splitData[3].Substring(0, splitData[3].Length - 1);
-                                //ReceiveCellUpdate(splitData, state);
-                                Debug.WriteLine("Setting: " + splitData[2] + "  " + splitData[3]);
-                                ISet<string> list = sheet.SetContentsOfCell(splitData[2], splitData[3]);
-                                ISet<string> copy = list;
+                switch (splitData[0])
+                {
+                    case "0":
+                        ReceiveFileNames(splitData);
+                        break;
+                    case "1":
+                        ReceiveNewID(splitData);
+                        break;
+                    case "2":
+                        ReceiveValidOpen(splitData, state);
+                        break;
+                    case "3":
+                        try
+                        {
+                            int c, r;
+                            NametoCoor(out c, out r, splitData[2]);
+                            string cellname = splitData[2];
+                            string cellvalue = splitData[3].Substring(0, splitData[3].Length - 1);
+                            ISet<string> list = sheet.SetContentsOfCell(cellname, cellvalue);
+                            ISet<string> copy = list;
 
+                                //ReceiveCellUpdate(splitData, state);
+                            Debug.WriteLine("Setting: " + cellname + "  " + cellvalue);
                                 // get the value of the named cell
-                                lock (thisLock)
-                                {
-                                    string value = sheet.GetCellValue(splitData[2]).ToString();
-                                    // see if it's string or  double or fomula 
-                                    string content = PrintableContents(sheet.GetCellContents(splitData[2]));
-                                    // set the cell value to the coordinate
-                                    spreadsheetPanel1.SetValue(c, r, value);
-                                    //this.spreadsheetPanel1.Select();
-                                    IsPanleFocused = true;
-                                    //Value_textBox.Text = value;
-                                    //for each string in the list,
-                                    lock (thisLock)
-                                    {
-                                        foreach (string s in copy)
-                                        {
-                                            int co, ro;
-                                            // convert the cell name to the coordinat
-                                            NametoCoor(out co, out ro, s);
-                                            // set the cell value as the specific cell value
-                                            spreadsheetPanel1.SetValue(co, ro, sheet.GetCellValue(s).ToString());
-                                        }
-                                    }
-                                }
+                            string value = sheet.GetCellValue(cellname).ToString();
+                                // see if it's string or  double or fomula 
+                            string content = PrintableContents(sheet.GetCellContents(cellname));
+
+                                // set the cell value to the coordinate
+                                //lock (spreadsheetPanel1)
+                                //{
+                            spreadsheetPanel1.SetValue(c, r, value);
+                                //}
+
+                            for (int i = 0; i < copy.Count; i++)
+                            {
+                                string s = copy.ElementAt(i);
+                                int co, ro;
+                                    // convert the cell name to the coordinat
+                                NametoCoor(out co, out ro, s);
+                                    // set the cell value as the specific cell value
+                                    //lock (spreadsheetPanel1)
+                                    //{
+                               spreadsheetPanel1.SetValue(co, ro, sheet.GetCellValue(s).ToString());
+                                    //}
+                            }
+                                //this.spreadsheetPanel1.Select();
+                                IsPanleFocused = true;
+                                //Value_textBox.Text = value;
+                                //for each string in the list,
                             }
                             catch (Exception s)
                             {
@@ -976,7 +987,6 @@ namespace SpreadsheetGUI
                             break;
                     }
                 }
-            }
             SpreadsheetNetworking.GetData(state);
         }
 
@@ -1078,8 +1088,8 @@ namespace SpreadsheetGUI
             DocID = splitData[1];
             DocID = DocID.Substring(0, DocID.Length - 1);
             // Add code to clear spreadsheet
-            ClearSpreadsheet();
-            System.Threading.Thread.Sleep(5000);
+            //ClearSpreadsheet();
+            //System.Threading.Thread.Sleep(5000);
         }
 
 
