@@ -1,3 +1,6 @@
+//Linxi Li
+//Tests base_ss class
+
 #include "baseSS.h"
 int main()
 {
