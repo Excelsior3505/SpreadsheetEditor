@@ -34,15 +34,17 @@ namespace SpreadsheetGUI
             InitializeComponent();
             Opcode = opCode;
             DocID = docid;
+            // Default text box value
             fileNameBox.Text = "(filename)";
             if (fileList.Count > 0)
             {
-                //fileListBox.Enabled = false;
+                // Display the files
                 foreach (string file in fileList)
                 {
                     fileListBox.Items.Add(file);
                 }
             }
+            // Register event handlers for clicking on the files
             fileListBox.Click += new EventHandler(fileListBox_Click);
             fileListBox.DoubleClick += new EventHandler(fileListBox_DoubleClick);
         }
@@ -64,15 +66,18 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void button1_Click(object sender, EventArgs e)
         {
+            // Check if the name entered is valid
             string name;
             if (fileNameBox.Text.Length < 1)
             {
                 MessageBox.Show("Please enter a filename");
                 return;
             }
+            // Check if the file is already in the list, then just open it
             if (files.Contains(fileNameBox.Text))
             {
                 name = fileNameBox.Text;
+                // Do a check to chop off the file extension because of the way the server is set up
                 if (name.Length > 2)
                 {
                     if (name.Substring(name.Length - 3, 3) == ".ss")
@@ -80,6 +85,7 @@ namespace SpreadsheetGUI
                         name = name.Substring(0, name.Length - 3);
                         if (name.Length > 0)
                         {
+                            // Send the server the name of the file
                             SpreadsheetNetworking.Send(clientSocket, name, Opcode);
                             Close();
                         }
@@ -94,11 +100,10 @@ namespace SpreadsheetGUI
                         Close();
                     }
                 }
-                //SpreadsheetNetworking.Send(clientSocket, DocID, 6);
-                //SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, Opcode);
             }
             else if (Opcode == 7)
             {
+                // Send the rename followed by a save request
                 name = fileNameBox.Text;
                 if (name.Length > 2)
                 {
@@ -126,7 +131,7 @@ namespace SpreadsheetGUI
             }
             else
             {
-                //SpreadsheetNetworking.Send(clientSocket, DocID, 6);
+                // Request a new file
                 name = fileNameBox.Text;
                 if (name.Length > 2)
                 {
@@ -167,7 +172,7 @@ namespace SpreadsheetGUI
         }
 
         /// <summary>
-        /// Sends a request to the server
+        /// Sends an open request to the server when double clicking the file
         /// </summary>
         /// <param name="sender"></param>
         /// <param name="e"></param>

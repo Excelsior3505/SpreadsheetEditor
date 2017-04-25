@@ -16,15 +16,6 @@ using System.Net;
 using System.Diagnostics;
 
 
-/* TODO:
- *      - Save sending and receiving
- *      - Open/New Receiving functionality
- *      - Rename Sending/Receiving
- *      - Pretty much all the Receiving functionality
- *  
- * */
-
-
 namespace SpreadsheetGUI
 {
     // Original code by
@@ -34,8 +25,10 @@ namespace SpreadsheetGUI
     // Linxi Li
     // u1016104
 
+    // No much left of original code as of 04/25/2017
 
-    /* Repurposed by Charlie Clausen, u0972939
+
+    /* Repurposed by Charles Clausen, u0972939
      * */
     public partial class Form1 : Form
     {
@@ -127,6 +120,7 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void newToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Try to send the server a 0
             if (CurrentlyConnected && ClientSocket.Connected)
             {
                 try
@@ -144,6 +138,7 @@ namespace SpreadsheetGUI
                 MessageBox.Show("You do not appear to be connected to the server");
                 AllowReconnect();
             }
+            // Open the list of files and the form that requests a new or open
             System.Threading.Thread.Sleep(350);
             OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket, 1, DocID);
             fileForm.Show();
@@ -156,6 +151,7 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // Send a request for all the file names
             if (CurrentlyConnected && ClientSocket.Connected)
             {
                 try
@@ -173,7 +169,7 @@ namespace SpreadsheetGUI
                 MessageBox.Show("You do not appear to be connected to the server");
                 AllowReconnect();
             }
-
+            // Wait for the file names and then load up the form to request an open
             System.Threading.Thread.Sleep(2000);
             if (AvailableFiles.Count > 0)
             {
@@ -183,8 +179,7 @@ namespace SpreadsheetGUI
             else
             {
                 MessageBox.Show("No available files");
-            }      
-                 
+            }                      
         }
 
 
@@ -196,7 +191,7 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void saveToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // filePath is null, excute saveAsToolStripMenuItem_Click function
+            // Send a request to the server to save the file
             if (CurrentlyConnected && ClientSocket.Connected)
             {
                 try
@@ -208,7 +203,6 @@ namespace SpreadsheetGUI
                     MessageBox.Show("You appear to have lost connection with the server");
                 }
             }
-
         }
 
 
@@ -220,6 +214,7 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void saveAsToolStripMenuItem_Click(object sender, EventArgs e)
         {
+            // This does the same thing as the save functionality
             if (CurrentlyConnected && ClientSocket.Connected)
             {
                 try
@@ -231,8 +226,10 @@ namespace SpreadsheetGUI
                     MessageBox.Show("You appear to have lost connection with the server");
                 }
             }
-
         }
+
+
+
         /// <summary>
         /// backgroundWorker1_DoWork helper to save the file.
         /// </summary>
@@ -254,7 +251,6 @@ namespace SpreadsheetGUI
 
 
 
-
         /// <summary>
         /// Excuting closing the program when the close botton is clicked
         /// </summary>
@@ -262,11 +258,10 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void closeToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            // if there is no change in the sheet, close the sheet directely, send server the proper code
+            // send server the proper code and save before
             saveToolStripMenuItem_Click(sender, e);
             SendCloseToServer();
             Close();
-
         }
 
 
@@ -306,6 +301,7 @@ namespace SpreadsheetGUI
             }
         }
 
+
         /// <summary>
         /// change cell name to coordinate
         /// </summary>
@@ -318,6 +314,7 @@ namespace SpreadsheetGUI
             int.TryParse(cellname.Substring(1), out r);
             r--;
         }
+
 
         /// <summary>
         /// returns a string that's converted from the colum and the row of the cell
@@ -343,13 +340,11 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void EnterBotton_Click(object sender, EventArgs e)
         {
-            // calls the Updatecell function
-            //Updatecell();
+            // Check if coneccted and then send a request to edit to the server
             if (CurrentlyConnected && ClientSocket.Connected)
             {
                 try
                 {
-                    // Create the packet of form "3\DocID\tCellName\tnewContents\n
                     string message = DocID + "\t" + ColRowtoString(col, row) + "\t" + userInput.Text;
                     SpreadsheetNetworking.Send(ClientSocket, message, 3);
                 }
@@ -361,16 +356,13 @@ namespace SpreadsheetGUI
             }
             else
             {
-                ipBox.Enabled = true;
-                usernameBox.Enabled = true;
-                CurrentlyConnected = false;
+                AllowReconnect();
             }
         }
 
 
-
         /// <summary>
-        /// update the cells with thier value
+        /// update the cells with thier value, THIS IS NEVER USED IN THE SPREADSHEET CLIENT
         /// </summary>
         private void Updatecell()
         {
@@ -408,8 +400,9 @@ namespace SpreadsheetGUI
             
         }
 
+
         /// <summary>
-        /// this function helps to selecte sheet cell by using arrowkeys on the ketboard
+        /// this function helps to select sheet cell by using arrowkeys on the ketboard
         /// </summary>
         /// <param name="msg"></param>
         /// <param name="keyData"></param>
@@ -461,7 +454,6 @@ namespace SpreadsheetGUI
         }
 
 
-
         /// <summary>
         /// returns a string. It looks up to the cell value and convert to string
         /// </summary>
@@ -484,6 +476,8 @@ namespace SpreadsheetGUI
             }
 
         }
+
+
         /// <summary>
         /// Checks if the contens is printable. If yes, return the contents
         /// </summary>
@@ -521,8 +515,9 @@ namespace SpreadsheetGUI
             );
         }
 
+
         /// <summary>
-        /// reads filename without extentision
+        /// reads filename without extentision NEVER USED IN CLIENT
         /// </summary>
         private void getFileName()
         {
@@ -538,6 +533,7 @@ namespace SpreadsheetGUI
 
         }
 
+
        /// <summary>
        /// a message box will show up when clicking the about botton in the menu strip
        /// </summary>
@@ -546,7 +542,8 @@ namespace SpreadsheetGUI
         private void aboutToolStripMenuItem_Click(object sender, EventArgs e)
         {
             MessageBox.Show("Spread Sheet Written By Linxi Li and Rong Xiao.\nLast Updated 11/2/2016" +
-                "\nVersion ps6\nSpreadsheerPanel provided by CS3500 UofU", "About"
+                "\nVersion ps6\nSpreadsheerPanel provided by CS3500 UofU\n" +
+                "Repurposed for CS3505 Spreadsheet client by Charles Clausen 04.2017", "About"
 
             );
         }
@@ -577,14 +574,10 @@ namespace SpreadsheetGUI
                 }
                 else
                 {
-                    ipBox.Enabled = true;
-                    usernameBox.Enabled = true;
-                    CurrentlyConnected = false;
+                    AllowReconnect();
                 }
-                //Updatecell();
             }
         }
-
 
 
         /// <summary>
@@ -612,6 +605,11 @@ namespace SpreadsheetGUI
             IsPanleFocused = true;
         }
 
+
+        /// <summary>
+        /// This function creates a packet that lets the server know this client is editing
+        /// the cell that is currently being selected
+        /// </summary>
         private void SendCellNameToServer()
         {
             if (CurrentlyConnected && ClientSocket.Connected)
@@ -635,82 +633,45 @@ namespace SpreadsheetGUI
             }
         }
 
+
+        /*
+         * This is where unused events go to die
+         * 
+         * */
         private void progressBar1_Click(object sender, EventArgs e)
-        {
-            IsPanleFocused = false;
-        }
-
+        {            IsPanleFocused = false;       }
         private void CancelBotton_Click(object sender, EventArgs e)
-        {
-
-        }
-
+        {        }
         private void Coordination_Click(object sender, EventArgs e)
-        {
-
-        }
-
+        {        }
         private void label3_Click(object sender, EventArgs e)
-        {
-
-        }
-
+        {       }
         private void label4_Click(object sender, EventArgs e)
-        {
-
-        }
-
+        {        }
         private void coordi_Label_Click(object sender, EventArgs e)
-        {
-            IsPanleFocused = false;
-        }
-
+        {           IsPanleFocused = false;        }
         private void spreadsheetPanel1_Load(object sender, EventArgs e)
-        {
-
-        }
-
-
+        {        }
         private void helpToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            IsPanleFocused = false;
-        }
-
-
+        {            IsPanleFocused = false;       }
         private void Form1_Load(object sender, EventArgs e)
-        {
-            IsPanleFocused = false;
-        }
+        {            IsPanleFocused = false;        }
 
         private void ValueLable_Click(object sender, EventArgs e)
-        {
-            IsPanleFocused = false;
-        }
-
+        {            IsPanleFocused = false;       }
         private void label2_Click(object sender, EventArgs e)
-        {
-            IsPanleFocused = false;
-        }
-
+        {           IsPanleFocused = false;        }
         private void Coordination_Click_1(object sender, EventArgs e)
-        {
-            IsPanleFocused = false;
-        }
-
+        {            IsPanleFocused = false;        }
         private void fileToolStripMenuItem_Click(object sender, EventArgs e)
-        {
-            IsPanleFocused = false;
-        }
-
+        {            IsPanleFocused = false;        }
         private void EnterLable_Click(object sender, EventArgs e)
-        {
-            IsPanleFocused = false;
-        }
-
+        {           IsPanleFocused = false;        }
         private void userInput_Click(object sender, EventArgs e)
-        {
-            IsPanleFocused = false;
-        }
+        {            IsPanleFocused = false;        }
+  
+        
+        
         /*
  * SPREADSHEET NETWORK EVENTS
  * 
@@ -752,7 +713,6 @@ namespace SpreadsheetGUI
             // Simple checks for input, could be improved upon later
             // Could also be a popup
             bool connect = true;
-            int timer = 0;
             if (ipBox.Text.Length < 5)
             {
                 ipBox.Text = "Invalid IP address";
@@ -799,7 +759,6 @@ namespace SpreadsheetGUI
             usernameBox.Enabled = true;
             CurrentlyConnected = false;
         }
-
 
 
         /// <summary>
@@ -857,6 +816,7 @@ namespace SpreadsheetGUI
                     MessageBox.Show("There was an error sending to the server");
                     MessageBox.Show(e.Message.ToString());
                     MessageBox.Show("Is the socket connected?  " + state.socket.Connected);
+                    AllowReconnect();
                 }
                 // Starts an asyncronous listen for data coming from the server
                 SpreadsheetNetworking.GetData(state);
@@ -864,6 +824,7 @@ namespace SpreadsheetGUI
             else
             {
                 MessageBox.Show("Could not receive ID from server");
+                AllowReconnect();
             }
         }
 
@@ -895,17 +856,9 @@ namespace SpreadsheetGUI
                     continue;
                 }
                 string[] splitData = message.Split('\t');
-                //MessageBox.Show(message);
-                System.Threading.Thread.Sleep(25);
-                    //splitData[splitData.Length - 1] = splitData[splitData.Length - 1].Substring(0, splitData.Length - 1);
-                    /*
-                    lock (state.sb)
-                    {
-                        // Prevent buffer overflow
-                        state.sb.Remove(0, splitOne[i].Length);
-                    }
-                    */
-                    // Check the op-codes
+                // This prevents the sheet from drawing and receiving simultaneously, causing a crash
+                System.Threading.Thread.Sleep(50);
+                // These are the cases for the different op codes
                 switch (splitData[0])
                 {
                     case "0":
@@ -918,6 +871,7 @@ namespace SpreadsheetGUI
                         ReceiveValidOpen(splitData, state);
                         break;
                     case "3":
+                        // This is the repurposed Updatecell() function
                         try
                         {
                             int c, r;
@@ -926,42 +880,26 @@ namespace SpreadsheetGUI
                             string cellvalue = splitData[3].Substring(0, splitData[3].Length - 1);
                             ISet<string> list = sheet.SetContentsOfCell(cellname, cellvalue);
                             ISet<string> copy = list;
-
-                                //ReceiveCellUpdate(splitData, state);
-                            Debug.WriteLine("Setting: " + cellname + "  " + cellvalue);
-                                // get the value of the named cell
+                            // get the value of the named cell
                             string value = sheet.GetCellValue(cellname).ToString();
-                                // see if it's string or  double or fomula 
+                            // see if it's string or  double or fomula 
                             string content = PrintableContents(sheet.GetCellContents(cellname));
-
-                                // set the cell value to the coordinate
-                                //lock (spreadsheetPanel1)
-                                //{
                             spreadsheetPanel1.SetValue(c, r, value);
-                                //}
 
                             for (int i = 0; i < copy.Count; i++)
                             {
                                 string s = copy.ElementAt(i);
                                 int co, ro;
-                                    // convert the cell name to the coordinat
+                                // convert the cell name to the coordinat
                                 NametoCoor(out co, out ro, s);
-                                    // set the cell value as the specific cell value
-                                    //lock (spreadsheetPanel1)
-                                    //{
                                spreadsheetPanel1.SetValue(co, ro, sheet.GetCellValue(s).ToString());
-                                    //}
                             }
-                                //this.spreadsheetPanel1.Select();
                                 IsPanleFocused = true;
-                                //Value_textBox.Text = value;
-                                //for each string in the list,
-                            }
-                            catch (Exception s)
-                            {
-                            MessageBox.Show(s.Message);
-                              //  MessageBox.Show("This is an invalid cell name");
-                            }
+                        }
+                        catch (Exception s)
+                        {
+                            MessageBox.Show("Invalid Cell name");
+                        }
                             break;
                         case "4":
                             ReceiveValidEdit(splitData);
@@ -988,14 +926,18 @@ namespace SpreadsheetGUI
                             break;
                     }
                 }
+            // Continue the feedback loop of getting data from the server
             SpreadsheetNetworking.GetData(state);
         }
 
+
+        /// <summary>
+        /// Receives a packet telling us that somebody is editing a cell
+        /// </summary>
+        /// <param name="splitData"></param>
         private void ReceiveEditLocation(string[] splitData)
         {
-            string data = "";
-
-            //MessageBox.Show("Received packet: " + data);
+            //TODO:  Highlight cells being edited
         }
 
 
@@ -1005,7 +947,6 @@ namespace SpreadsheetGUI
         /// <param name="splitData"></param>
         private void ReceiveInvalidRename(string[] splitData)
         {
-            //DocID = GetDocID(splitData);
             MessageBox.Show("The spreadsheet rename attempt was unsuccessful");
         }
 
@@ -1016,7 +957,6 @@ namespace SpreadsheetGUI
         /// <param name="splitData"></param>
         private void ReceiveValidRename(string[] splitData)
         {
-            //DocID = GetDocID(splitData);
             if (DocID != "-1")
             {
                 MessageBox.Show("Spreadsheet successfully renamed");
@@ -1051,7 +991,6 @@ namespace SpreadsheetGUI
         /// <param name="splitData"></param>
         private void ReceiveInvalidEdit(string[] splitData)
         {
-            //DocID = GetDocID(splitData);
             MessageBox.Show("This caused an error on the server, please change the value");
         }
 
@@ -1062,52 +1001,43 @@ namespace SpreadsheetGUI
         /// <param name="splitData"></param>
         private void ReceiveValidEdit(string[] splitData)
         {
-            //DocID = GetDocID(splitData);
         }
 
 
         /// <summary>
-        /// Updates the actual value of the cell
+        /// Updates the actual value of the cell, This is UNUSED
         /// </summary>
         /// <param name="splitData"></param>
         private void ReceiveCellUpdate(string[] splitData, SpreadsheetNetworking.SocketState state)
         {
-            Debug.WriteLine("Adding: " + splitData[2] + "  " + splitData[3]);
             sheet.SetContentsOfCell(splitData[2], splitData[3]);
             Updatecell();
             Display();
-            //SpreadsheetNetworking.GetData(state);
         }
 
 
         /// <summary>
-        /// Receive the DocID from the server when opening an existing spreadsheet
+        /// Receive the DocID from the server when opening an existing spreadsheet, clear current spreadsheet
         /// </summary>
         /// <param name="splitData"></param>
         private void ReceiveValidOpen(string[] splitData, SpreadsheetNetworking.SocketState state)
         {
             DocID = splitData[1];
             DocID = DocID.Substring(0, DocID.Length - 1);
-            // Add code to clear spreadsheet
-            //ClearSpreadsheet();
-            //System.Threading.Thread.Sleep(5000);
-            //spreadsheetPanel1.Clear();
             ClearSpreadsheet();
             System.Threading.Thread.Sleep(100);
         }
 
 
         /// <summary>
-        /// Receive the DocID from the server when opening up a new spreadsheet
+        /// Receive the DocID from the server when opening up a new spreadsheet, clear current spreadsheet
         /// </summary>
         /// <param name="splitData"></param>
         private void ReceiveNewID(string[] splitData)
         {
             DocID = splitData[1];
             DocID = DocID.Substring(0, DocID.Length - 1);
-            // Add code to clear spreadsheet
             ClearSpreadsheet();
-            //spreadsheetPanel1.Clear();
             System.Threading.Thread.Sleep(100);
         }
 
@@ -1124,6 +1054,7 @@ namespace SpreadsheetGUI
             id = DocID.Substring(0, DocID.Length - 1);
             return id;
         }
+
 
         /// <summary>
         /// Takes the split up packet data and save the data to the AvailableFiles list
@@ -1161,6 +1092,7 @@ namespace SpreadsheetGUI
                 catch(Exception)
                 {
                     MessageBox.Show("Failed to send undo request to server, check connection and try again");
+                    AllowReconnect();
                 }
             }
         }
@@ -1182,9 +1114,11 @@ namespace SpreadsheetGUI
                 catch (Exception)
                 {
                     MessageBox.Show("Failed to send undo request to server, check connection and try again");
+                    AllowReconnect();
                 }
             }
         }
+
 
         /// <summary>
         /// Send a rename request to the server
@@ -1204,6 +1138,7 @@ namespace SpreadsheetGUI
                 catch (Exception)
                 {
                     MessageBox.Show("Please reconnect to server");
+                    AllowReconnect();
                 }
             }
             else
@@ -1227,9 +1162,8 @@ namespace SpreadsheetGUI
                 spreadsheetPanel1.SetValue(col, row, "");
                 IsPanleFocused = true;
             }
-            sheet = new Spreadsheet();
-            
-           
+            sheet = new Spreadsheet();           
         }
+
     }
 }
