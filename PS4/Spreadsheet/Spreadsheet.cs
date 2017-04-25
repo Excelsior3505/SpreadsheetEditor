@@ -317,6 +317,7 @@ namespace SS
         /// value should be either a string, a double, or a Formula.
         public override object GetCellContents(string name)
         {
+            Normalize(name);
             Regex check = new Regex(@"^[a-zA-Z_](?: [a-zA-Z_]|\d)*");
             // if the name is null or the name is not valid, throw exception
             if (name == null || check.IsMatch(name = Normalize(name)) == false)
@@ -362,6 +363,7 @@ namespace SS
         /// <returns></returns>
         private double my_Lookup(string name)
         {
+            Normalize(name);
             // if spreadsheet contains the name key, create an object that's equal to the 
             // contents of the cell.
 
@@ -405,27 +407,35 @@ namespace SS
         /// </summary>
         protected override ISet<string> SetCellContents(string name, Formula formula)
         {
-            
 
+            Normalize(name);
             // if changing the contents of the named cell to be the formula would cause a 
             // circular dependency, throws a CircularException.  (No change is made to the spreadsheet.)
             IEnumerable<string> dents = myDG.GetDependents(name);
             myDG.ReplaceDependents(name, new HashSet<string>());
+            string x = formula.ToString();
+            x = x.ToUpper();
+            Formula newformula = new Formula(x);
+            formula = newformula;
             foreach (string var in formula.GetVariables())
+                
             {
-                    myDG.AddDependency(name, var);
+                Normalize(var);
+                myDG.AddDependency(name, var);
                 
             }
 
             // if the ss has had the cell name, replace
             if (mySS.ContainsKey(name))
             {
-                mySS[name].Contents = formula;
+                Normalize(name);
+                                mySS[name].Contents = newformula;
             }
 
             // otherwise, add this name,cell key value pair to ss
             if (!mySS.ContainsKey(name))
             {
+                Normalize(name);
                 Cell theCell = new Cell(name, formula, my_Lookup);
                 mySS.Add(name, theCell);
             }
@@ -434,6 +444,7 @@ namespace SS
             // CircularException
             foreach (string s in GetCellsToRecalculate(name))
             {
+                Normalize(name);
                 mySS[s].Contents = mySS[s].Contents;
             }
 
@@ -444,7 +455,7 @@ namespace SS
             // and The names are enumerated in the order in which the calculations should be done. 
             // create a new set to equal to the ordered set
             HashSet<string> set = new HashSet<string>(GetCellsToRecalculate(name));
-
+            
             // add the name to the set and return
             set.Add(name);
             return set;
@@ -465,8 +476,8 @@ namespace SS
         /// </summary>>(Get
         protected override ISet<string> SetCellContents(string name, string text)
         {
-            
 
+            Normalize(name);
             // Otherwise, the contents of the named cell becomes text.  The method returns a set consisting of 
             // name plus the names of all other cells whose value depends, directly or indirectly, 
             // on the named cell.
@@ -519,8 +530,8 @@ namespace SS
         protected override ISet<string> SetCellContents(string name, double number)
         {
 
-            
 
+            Normalize(name);
             // Otherwise, the contents of the named cell becomes number.  The method returns a
             // set consisting of name plus the names of all other cells whose value depends, 
             // directly or indirectly, on the named cell.
@@ -577,6 +588,7 @@ namespace SS
         /// </summary>
         protected override IEnumerable<string> GetDirectDependents(string name)
         {
+            Normalize(name);
             // If name is null, throws an ArgumentNullException.
             if (name == null)
             {
@@ -759,6 +771,7 @@ namespace SS
         /// </summary>
         public override object GetCellValue(string name)
         {
+            Normalize(name);
             //If name is null or invalid, throws an InvalidNameException.
             if (name == null || IsValidps4(name) == false || !IsValid(Normalize(name)))
             {
@@ -811,6 +824,7 @@ namespace SS
         /// set {A1, B1, C1} is returned.
         public override ISet<string> SetContentsOfCell(string name, string content)
         {
+            Normalize(name);
             // If content is null, throws an ArgumentNullException.
             if (content == null)
                 throw new ArgumentNullException();
