@@ -14,7 +14,9 @@ namespace SpreadsheetGUI
 {
     public partial class OpenForm : Form
     {
+        // Needs a reference to the socket for sending messages
         public Socket clientSocket;
+        // Needs a reference to the filelist of the clients
         public List<string> files;
         int Opcode = -1;
         string DocID;
@@ -52,7 +54,7 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void fileNameBox_TextChanged(object sender, EventArgs e)
         {
-            
+
         }
 
         /// <summary>
@@ -62,6 +64,7 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void button1_Click(object sender, EventArgs e)
         {
+            string name;
             if (fileNameBox.Text.Length < 1)
             {
                 MessageBox.Show("Please enter a filename");
@@ -69,25 +72,86 @@ namespace SpreadsheetGUI
             }
             if (files.Contains(fileNameBox.Text))
             {
+                name = fileNameBox.Text;
+                if (name.Length > 2)
+                {
+                    if (name.Substring(name.Length - 3, 3) == ".ss")
+                    {
+                        name = name.Substring(0, name.Length - 3);
+                        if (name.Length > 0)
+                        {
+                            SpreadsheetNetworking.Send(clientSocket, name, Opcode);
+                            Close();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Please enter a valid filename");
+                        }
+                    }
+                    else
+                    {
+                        SpreadsheetNetworking.Send(clientSocket, name, Opcode);
+                        Close();
+                    }
+                }
                 //SpreadsheetNetworking.Send(clientSocket, DocID, 6);
-                SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, Opcode);
-                Close();
+                //SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, Opcode);
             }
             else if (Opcode == 7)
             {
-                string message = DocID + "\t" + fileNameBox.Text;
-                SpreadsheetNetworking.Send(clientSocket, message, Opcode);
-                SpreadsheetNetworking.Send(clientSocket, DocID, 6);
-                Close();
+                name = fileNameBox.Text;
+                if (name.Length > 2)
+                {
+                    if (name.Substring(name.Length - 3, 3) == ".ss")
+                    {
+                        name = name.Substring(0, name.Length - 3);
+                        if (name.Length > 0)
+                        {
+                            SpreadsheetNetworking.Send(clientSocket, DocID + "\t" + name, Opcode);
+                            SpreadsheetNetworking.Send(clientSocket, DocID, 6);
+                            Close();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Please enter a valid filename");
+                        }
+                    }
+                    else
+                    {
+                        SpreadsheetNetworking.Send(clientSocket, DocID + "\t" + name, Opcode);
+                        SpreadsheetNetworking.Send(clientSocket, DocID, 6);
+                        Close();
+                    }
+                }
             }
             else
             {
                 //SpreadsheetNetworking.Send(clientSocket, DocID, 6);
-                SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, Opcode);
-                Close();
+                name = fileNameBox.Text;
+                if (name.Length > 2)
+                {
+                    if (name.Substring(name.Length - 3, 3) == ".ss")
+                    {
+                        name = name.Substring(0, name.Length - 3);
+                        if (name.Length > 0)
+                        {
+                            SpreadsheetNetworking.Send(clientSocket, name, Opcode);
+                            Close();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Please enter a valid filename");
+                        }
+                    }
+                    else
+                    {
+                        SpreadsheetNetworking.Send(clientSocket, name, Opcode);
+                        Close();
+                    }
+                }
             }
-            
         }
+
 
         /// <summary>
         /// Fills text box with the filename
@@ -109,13 +173,36 @@ namespace SpreadsheetGUI
         /// <param name="e"></param>
         private void fileListBox_DoubleClick(object sender, EventArgs e)
         {
+            string name;
             if (fileListBox.SelectedItem != null)
             {
                 fileNameBox.Text = fileListBox.SelectedItem.ToString();
                 //SpreadsheetNetworking.Send(clientSocket, DocID, 6);
-                SpreadsheetNetworking.Send(clientSocket, fileNameBox.Text, Opcode);
-                Close();
+                name = fileNameBox.Text;
+                if (name.Length > 2)
+                {
+                    if (name.Substring(name.Length - 3, 3) == ".ss")
+                    {
+                        name = name.Substring(0, name.Length - 3);
+                        if (name.Length > 0)
+                        {
+                            SpreadsheetNetworking.Send(clientSocket, name, Opcode);
+                            Close();
+                        }
+                        else
+                        {
+                            MessageBox.Show("Please enter a valid filename");
+                        }
+                    }
+                    else
+                    {
+                        SpreadsheetNetworking.Send(clientSocket, name, Opcode);
+                        Close();
+                    }
+                }
             }
         }
     }
 }
+
+

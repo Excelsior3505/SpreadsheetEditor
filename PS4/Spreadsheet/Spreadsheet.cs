@@ -105,11 +105,21 @@ namespace SS
                 set
                 {
                     _value = value;
-                    if (value is Formula)
+                    try
                     {
-                        _value = (_value as Formula).Evaluate(Lookup);
+                        if (value is Formula)
+                        {
+                            _value = (_value as Formula).Evaluate(Lookup);
+                        }
                     }
-                    _contents = value;
+                    catch (InvalidNameException)
+                    {
+
+                    }
+                    finally
+                    {
+                                            _contents = value;
+                    }
                 }
             }
 

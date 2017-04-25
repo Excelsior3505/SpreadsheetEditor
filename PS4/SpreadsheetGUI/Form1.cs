@@ -144,7 +144,7 @@ namespace SpreadsheetGUI
                 MessageBox.Show("You do not appear to be connected to the server");
                 AllowReconnect();
             }
-            System.Threading.Thread.Sleep(2000);
+            System.Threading.Thread.Sleep(350);
             OpenForm fileForm = new OpenForm(AvailableFiles, ClientSocket, 1, DocID);
             fileForm.Show();
         }
@@ -887,7 +887,7 @@ namespace SpreadsheetGUI
 
             string[] splitOne = Regex.Split(data, @"(?<=[\n])");
             //MessageBox.Show("Message length: " + splitOne.Length.ToString());   
-            System.Threading.Thread.Sleep(100); 
+            //System.Threading.Thread.Sleep(100); 
             foreach (string message in splitOne)
             {
                 if (message == "\n" || message.Length < 1 || message == "\t")
@@ -896,7 +896,7 @@ namespace SpreadsheetGUI
                 }
                 string[] splitData = message.Split('\t');
                 //MessageBox.Show(message);
-                System.Threading.Thread.Sleep(50);
+                System.Threading.Thread.Sleep(10);
                     //splitData[splitData.Length - 1] = splitData[splitData.Length - 1].Substring(0, splitData.Length - 1);
                     /*
                     lock (state.sb)
@@ -959,6 +959,7 @@ namespace SpreadsheetGUI
                             }
                             catch (Exception s)
                             {
+                            MessageBox.Show(s.Message);
                                 MessageBox.Show("This is an invalid cell name");
                             }
                             break;
@@ -1090,6 +1091,9 @@ namespace SpreadsheetGUI
             // Add code to clear spreadsheet
             //ClearSpreadsheet();
             //System.Threading.Thread.Sleep(5000);
+            //spreadsheetPanel1.Clear();
+            ClearSpreadsheet();
+            System.Threading.Thread.Sleep(100);
         }
 
 
@@ -1103,6 +1107,8 @@ namespace SpreadsheetGUI
             DocID = DocID.Substring(0, DocID.Length - 1);
             // Add code to clear spreadsheet
             ClearSpreadsheet();
+            //spreadsheetPanel1.Clear();
+            System.Threading.Thread.Sleep(100);
         }
 
 
@@ -1221,6 +1227,9 @@ namespace SpreadsheetGUI
                 spreadsheetPanel1.SetValue(col, row, "");
                 IsPanleFocused = true;
             }
+            sheet = new Spreadsheet();
+            
+           
         }
     }
 }
