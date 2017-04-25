@@ -1,3 +1,4 @@
+#include <boost/filesystem.hpp>
 #include "baseSS.h"
 
 base_ss::base_ss_ptr base_ss::create()
@@ -55,12 +56,12 @@ int base_ss::set_cell(std::string key, std::string content)
 	      
 	          std::string dependancy(dep.begin(), dep.end());
 	         // std::cout << "Dep: " <<  dependancy << std::endl;
-		  if(dep_graph.add_dependency(key, dependancy) == 1)
-		    {
-		      return 1;
-		    } 
+	         if(dep_graph.add_dependency(key, dependancy) == 1)
+		        {
+		          return 1;
+		       } 
 	        } 
-		
+
 	      }
       if(spreadsheet.find(key) == spreadsheet.end())
         {
@@ -119,20 +120,52 @@ return 0;
 
 void base_ss::loadSS(std::string fileName)
 {
-  std::ifstream loading(fileName);
-  {
-    boost::archive::text_iarchive in(loading);
-    in >> spreadsheet;
-  }
+  
+  std::string hasSS = "";
+  size_t pos = fileName.find_last_of(".");
+  if(pos != std::string::npos)
+    {
+      hasSS = fileName.substr(pos);
+      std::cout << "hasSS: " << hasSS << std::endl;
+      hasSS.erase(std::remove(hasSS.begin(), hasSS.end(), ' '), hasSS.end());
+      if(hasSS != ".ss")
+	fileName = fileName + ".ss";
+    }
+  else
+    fileName = fileName + ".ss";
+  
+  if(boost::filesystem::exists("../files/" + fileName))
+    {
+      std::ifstream loading(fileName);
+      {
+	boost::archive::text_iarchive in(loading);
+	in >> spreadsheet;
+      }
+    }
 }
 
 void base_ss::saveSS(std::string saveName)
 {
-  std::ofstream saving(saveName);
-  {
-    boost::archive::text_oarchive out(saving);
-    out << spreadsheet;
-  }
+  std::string hasSS = "";
+  size_t pos = saveName.find_last_of(".");
+  if(pos != std::string::npos)
+    {
+      hasSS = saveName.substr(pos);
+      std::cout << "hasSS: " << hasSS << std::endl;
+      hasSS.erase(std::remove(hasSS.begin(), hasSS.end(), ' '), hasSS.end());
+      if(hasSS != ".ss")
+	saveName = saveName + ".ss";
+    }
+  else
+    saveName = saveName + ".ss";
+  if(boost::filesystem::exists("../files/" + saveName))
+    {
+      std::ofstream saving(saveName);
+      {
+	boost::archive::text_oarchive out(saving);
+	out << spreadsheet;
+      }
+    }
 }
 
 void base_ss::rename(std::string fileName)
