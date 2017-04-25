@@ -112,10 +112,7 @@ namespace SS
                             _value = (_value as Formula).Evaluate(Lookup);
                         }
                     }
-                    catch (InvalidNameException)
-                    {
-
-                    }
+                   
                     finally
                     {
                                             _contents = value;
@@ -147,6 +144,14 @@ namespace SS
                 Name = _name;
 
                 Lookup = _lookup;
+                Contents = _contents;
+
+            }
+            public Cell(string _name, object _contents)
+            {
+                Name = _name;
+
+                Lookup = null;
                 Contents = _contents;
 
             }

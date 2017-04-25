@@ -896,7 +896,7 @@ namespace SpreadsheetGUI
                 }
                 string[] splitData = message.Split('\t');
                 //MessageBox.Show(message);
-                System.Threading.Thread.Sleep(10);
+                System.Threading.Thread.Sleep(25);
                     //splitData[splitData.Length - 1] = splitData[splitData.Length - 1].Substring(0, splitData.Length - 1);
                     /*
                     lock (state.sb)
@@ -960,7 +960,7 @@ namespace SpreadsheetGUI
                             catch (Exception s)
                             {
                             MessageBox.Show(s.Message);
-                                MessageBox.Show("This is an invalid cell name");
+                              //  MessageBox.Show("This is an invalid cell name");
                             }
                             break;
                         case "4":
